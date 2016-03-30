@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hello Page</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #000;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+    </style>
+    <script src="../lib/Three_r49.js"></script>
+    <script src="../socket.io/socket.io.js"></script>
+    <script src="client_world_test.js"></script>
+    <script>
+        var socket = io();
+        socket.on('connect', function () {
+            console.log('client connected')
+        });  // пока ничего не делать при установлении подключения
+
+        socket.on('createPlayer',function(data){
+            console.log('createPlayer on' + data);
+            createPlayer(data);
+        });
+
+        socket.on('addOtherPlayer', function(data){
+            addOtherPlayer(data);
+        });
+
+        socket.on('updateWorld', function(data){
+
+            console.log('WORLD UPDATE FOR!!!!!!!!!!!!');
+            console.log(socket.id);
+            updatePlayerData(data);
+        })
+
+
+       // socket.on('socketID', function(data){
+       //     console.log('!!!!!!!!!!!: ' + data.id)
+       // })
+
+    </script>
+</head>
+<body>
+<div style="position:absolute; z-index:10; background:rgba(0,0,0,.5); padding:10px; color:#fff;">
+    W key : foward<br>
+    S key : backword<br>
+    A key : left<br>
+    D key : right<br>
+    C key : toggle Crouch<br>
+    <!--Enter key : chat<br>-->
+    MouseDrag : rotate
+</div>
+</body>
+</html>

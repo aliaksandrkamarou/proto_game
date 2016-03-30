@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hello Page</title>
+    <script src="/lib/Three_r49.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/client_app/client_world.js"></script>
+    <script>
+        var socket = io();
+        socket.on('connect',function(){
+            console.log('Client connected to Server');
+        });
+        socket.on('socketID', function(data){
+            console.log('Client id: '+ JSON.stringify(data));
+        });
+        socket.on('newPlayer', function(data){
+            console.log('newPlayer id: '+ JSON.stringify(data));
+        });
+
+    </script>
+</head>
+<body>
+    <p>Hello Page</p>
+
+</body>
+</html>
