@@ -54,6 +54,37 @@ var createPlayer = function(data){
 };
 
 
+var addOtherPlayer = function(data){
+    console.log('client_world: Other PLayer DATA HAS ARRIVED');
+    console.log(data);
+
+    var cube_geometry = new THREE.CubeGeometry(2, 2, 2);
+    var cube_material = new THREE.MeshBasicMaterial({color: 0x7777ff, wireframe: false});
+    var otherPlayer = new THREE.Mesh(cube_geometry, cube_material);
+
+
+    otherPlayer.position.set(data.position.x, data.position.y, data.position.z );
+    otherPlayer.rotation.set(data.rotation.x, data.rotation.y, data.rotation.z );
+
+    otherPlayer.playerId = data.playerId;
+
+
+    players.push(otherPlayer);
+    scene.add( otherPlayer );
+
+};
+
+
+var removeOtherPlayer = function (data) {
+
+    scene.remove(playerForId(data.playerId));
+
+};
+
+
+
+
+
 document.addEventListener('keydown', onKeyDown, false );
 document.addEventListener('keyup', onKeyUp, false );
 
@@ -492,4 +523,15 @@ window.addEventListener('DOMContentLoaded', function () {
 
 }, false);
 
+/*
+window.addEventListener( 'resize', onWindowResize, false );
 
+function onWindowResize() {
+
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+
+    renderer.setSize( window.innerWidth, window.innerHeight );
+
+};
+*/

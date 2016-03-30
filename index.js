@@ -45,9 +45,30 @@ io.on('connection', function(socket){
     console.log('create player emitted');
  //END OF CREATE NEW PLAYER on CLIENT
 
+
+
+
+
  //BROADCAST NEW PLAYER to OTHER CLIENTS
-   // socket.broadcast.emit('addOtherPlayer', player);
+    socket.broadcast.emit('addOtherPlayer', player);
  //END OF BROADCAST NEW PLAYER to OTHER CLIENTS
+
+// REQUEST OLD PLAYERS Handler
+    socket.on('requestOldPlayers', function(){
+        for (var i = 0; i < world.players.length; i++){
+            if (world.players[i].playerId != id)
+                socket.emit('addOtherPlayer', world.players[i]);
+        }
+    });
+//
+
+    // remove player
+    socket.on('disconnect', function(){
+        console.log('user disconnected');
+        io.emit('removeOtherPlayer', player); // danger !!! emit player data
+        world.removePlayer( player );
+    });
+
 
     //keyDown consumer
     socket.on('keydown', function(event){
