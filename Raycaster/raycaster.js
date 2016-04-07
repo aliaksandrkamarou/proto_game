@@ -6,7 +6,7 @@ var raycaster = new THREE.Raycaster();
 /*
 var origin = new THREE.Vector3(0,0.6,0);
 
-
+//12
 var geometry1 = new THREE.SphereGeometry( 5, 8, 8 );
 var material1 = new THREE.MeshLambertMaterial( {color: 0xffff00} );
 var sphere1 = new THREE.Mesh( geometry1, material1 );
