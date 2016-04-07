@@ -16,7 +16,8 @@
         }
     </style>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/lib/Three_r49.js"></script>
+    <script src="/lib/three_r49.js"></script>
+
     <script>
         //socket
         var socket = io();
@@ -37,32 +38,7 @@
         var testPlayer;
         var scene;
         //var createPlayer = function(data){
-        var createPlayer = function(){
-           // playerData = data;
 
-            //var cube_geometry = new THREE.BoxGeometry(data.sizeX, data.sizeY, data.sizeZ);
-            //var cube_material = new THREE.MeshBasicMaterial({color: 0x7777ff, wireframe: false});
-            var cube_geometry = new THREE.CubeGeometry(2, 3, 5);
-            var cube_material = new THREE.MeshBasicMaterial({color: 0x7777ff, wireframe: false});
-            testPlayer = new THREE.Mesh(cube_geometry, cube_material);
-
-            testPlayer.rotation.set(0,0,0);
-
-           // player.position.x = data.x;
-           // player.position.y = data.y;
-           // player.position.z = data.z;
-
-           // playerId = data.playerId;
-           // moveSpeed = data.speed;
-           // turnSpeed = data.turnSpeed;
-
-
-            //objects.push( player );
-            scene.add( testPlayer );
-            console.log('PLAYER IS HERE!!!!!!!!!!!!!!!!!!!!!!!')
-
-
-        };
 
 
 
@@ -133,7 +109,7 @@ var player = new Player;
             scene.add(player.model.objects);
 
             //IO
-            createPlayer();
+           // createPlayer();
             //IO
 
             var camera = new THREE.PerspectiveCamera(40, width / height, 1, 1000);
@@ -162,7 +138,7 @@ var player = new Player;
 
             renderer = new THREE.WebGLRenderer();
             renderer.setSize(width, height);
-            renderer.shadowMapEnabled = true;
+            renderer.shadowMapEnabled = true;  //    shadowMap.enabled
             renderer.shadowMapSoft = true;
 
 //	renderer.shadowCameraNear = camera.near;
@@ -172,7 +148,7 @@ var player = new Player;
 //	renderer.shadowMapDarkness = 0.5;
 //	renderer.shadowMapWidth = 500;
 //	renderer.shadowMapHeight = 500;	
-            renderer.shadowMapEnabled = true;
+
 //	renderer.shadowMapSoft = true;
 
             document.body.appendChild(renderer.domElement);
@@ -185,9 +161,10 @@ var player = new Player;
 
             var planeGeometry = new THREE.PlaneGeometry(1000, 1000);
             var planeMaterial = new THREE.MeshLambertMaterial({
-                map: THREE.ImageUtils.loadTexture('bg.jpg'),
+                map: THREE.ImageUtils.loadTexture('bg.jpg'),  //THREE.ImageUtils.loadTexture has been deprecated. Use THREE.TextureLoader() instead.
                 color: 0xffffff
             });
+
             planeMaterial.map.repeat.x = 300;
             planeMaterial.map.repeat.y = 300;
             planeMaterial.map.wrapS = THREE.RepeatWrapping;
@@ -195,6 +172,10 @@ var player = new Player;
             var plane = new THREE.Mesh(planeGeometry, planeMaterial);
             plane.castShadow = false;
             plane.receiveShadow = true;
+            // r_49 -> r_50 PlaneGeometry changed back to vertical orientation (facing screen instead of laying on the ground).
+           // plane.rotation.x = - Math.PI / 2;
+            //
+
             scene.add(plane);
 
             var meshArray = [];
@@ -251,15 +232,15 @@ var player = new Player;
 
             var md2meshBody;
             var material = new THREE.MeshLambertMaterial({
-                map: THREE.ImageUtils.loadTexture('1.png'),
-                ambient: 0x999999,
+                map: THREE.ImageUtils.loadTexture('1.png'), //THREE.ImageUtils.loadTexture has been deprecated. Use THREE.TextureLoader() instead.
+                //ambient: 0x999999, //THREE.MeshLambertMaterial: 'ambient' is not a property of this material.
                 color: 0xffffff,
-                specular: 0xffffff,
-                shininess: 25,
+                //specular: 0xffffff, //THREE.MeshLambertMaterial: 'specular' is not a property of this material.
+                //shininess: 25, //THREE.MeshLambertMaterial: 'shininess' is not a property of this material.
                 morphTargets: true
             });
             var loader = new THREE.JSONLoader();
-            loader.load('droid.js', function (geometry) {
+            loader.load('droid.js', function (geometry) {   // r52 -> r53 Loader callbacks which previously only had geometry parameter, are now also passed a second one: materials: loader.load( 'file.js', function ( geometry, materials ) {} )
                 md2meshBody = new THREE.MorphAnimMesh(geometry, material);
                 md2meshBody.rotation.y = -Math.PI / 2;
                 md2meshBody.scale.set(.02, .02, .02);

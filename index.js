@@ -25,6 +25,8 @@ app.use(favicon('favicon.ico'));
 app.use('/tps',express.static(__dirname+'/tps'));
 app.use('/lib',express.static(__dirname+'/lib'));
 app.use('/client_app',express.static(__dirname+'/client_app'));
+app.use('/anim',express.static(__dirname+'/anim'));
+app.use('/Raycaster',express.static(__dirname+'/Raycaster'));
 //app.route(function(req,rea,next){
 //    console.log(__dirname +  req.url);
 //    res.sendFile(__dirname +  req.url);
@@ -74,7 +76,6 @@ io.on('connection', function(socket){
     socket.on('keydown', function(event){
 
         world.onKeyDown(event, id);
-
         console.log(event);
         console.log(socket.id);
 
@@ -84,7 +85,22 @@ io.on('connection', function(socket){
     socket.on('keyup', function(event){
 
         world.onKeyUp(event, id);
+        console.log(event);
+        console.log(socket.id);
 
+    });
+
+    socket.on('mousedown', function(event){
+
+        world.onMouseDown(event, id);
+        console.log(event);
+        console.log(socket.id);
+
+    });
+
+    socket.on('mouseup', function(event){
+
+        world.onMouseUp(event, id);
         console.log(event);
         console.log(socket.id);
 
@@ -107,10 +123,12 @@ io.on('connection', function(socket){
 //setInterval(function () {
 //    console.log(world.players)
 //}, 1000);
+
+
 setInterval(function(){
     world.renderPlayers();
 
-    console.log(world.players)
+    //console.log(world.players)
      io.emit('updateWorld', world.players) /// EMIT TO ALL  // IS IT SYNC?????????
 }    ,10);  // render world
 
