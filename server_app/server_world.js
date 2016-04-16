@@ -1,3 +1,8 @@
+
+var THREE = require('three');
+//var clock = new THREE.Clock();
+var objects = [];
+
 var players = [];
 
 function Player(){
@@ -70,10 +75,15 @@ function Player(){
         left: false,
         right: false,
         speed: .1,
-        angle: 0
+        angle: 0,
+        hitOnce: false
     };
 
+    this.mouse2D = {};
+
     this.actions = {};
+
+    this.camera = {};
 
 
 
@@ -128,147 +138,31 @@ var playerForId = function(id){
 
 
 
-// KEYBOARD Handlers
-
-//keyDown handler
-
-var onKeyDown = function( event ,id ){
-
-    console.log('onKeyDown call');
-    console.log(event)
-    console.log('id :'+ id );
-
-    //event = event || window.event;
-    var player = playerForId(id);
-    player.keyState[event] = true; // side effect -- activate key
-    console.log(player);
-
-};
-
-//keyUp handler
-
-var onKeyUp = function( event ,id ){
-
-    console.log('onKeyUp call');
-    console.log(event)
-    console.log('id :'+ id );
-
-    //event = event || window.event;
-    var player = playerForId(id);
-    player.keyState[event] = false; // side effect -- de-activate key
-    console.log(player);
-
-};
-
-var onMouseDown = function( event ,id ){
-
-    console.log('onMouseDown call');
-    console.log(event)
-    console.log('id :'+ id );
-
-    //event = event || window.event;
-    var player = playerForId(id);
-    player.mouseState[event] = true; // side effect -- activate mouse key
-    console.log(player);
-
-};
-
-
-var onMouseUp = function( event ,id ){
-
-    console.log('onMouseUp call');
-    console.log(event)
-    console.log('id :'+ id );
-
-    //event = event || window.event;
-    var player = playerForId(id);
-    player.mouseState[event] = false; // side effect -- de-activate mouse key
-    console.log(player);
-
-};
-
-
-/// droid keys
-/*
-var onKeyDown = function (e , id) {
-
-    var player = playerForId(id);
-
-
-    if (!/65|68|83|87/.test(e.keyCode)) {
-        return
-    }
-    if (e.keyCode === 87) {
-        player.moveState.front = true;
-        player.moveState.Backwards = false;
-    } else if (e.keyCode === 83) {
-        player.moveState.Backwards = true;
-        player.moveState.front = false;
-    } else if (e.keyCode === 65) {
-        player.moveState.left = true;
-        player.moveState.right = false;
-    } else if (e.keyCode === 68) {
-        player.moveState.right = true;
-        player.moveState.left = false;
-    }
-    if (!player.moveState.moving) {
-        if (player.model.state === 'stand') {
-            changeMotion('run');    ////
-        }
-        if (player.model.state === 'crstand') {
-            changeMotion('crwalk');
-        }
-        moveState.moving = true;
-        move();
-        timer = setInterval(function () {
-            move();
-        }, 1000 / 60);
-    }
-}, false);
-
-document.addEventListener('keyup', function (e) {
-    if (!/65|68|83|87/.test(e.keyCode)) {
-        return
-    }
-    if (e.keyCode === 87) {
-        moveState.front = false;
-    } else if (e.keyCode === 83) {
-        moveState.Backwards = false;
-    } else if (e.keyCode === 65) {
-        moveState.left = false;
-    } else if (e.keyCode === 68) {
-        moveState.right = false;
-    }
-    if (!moveState.front && !moveState.Backwards && !moveState.left && !moveState.right) {
-        changeMotion(player.model.state);
-        moveState.moving = false;
-        clearInterval(timer);
-    }
-}, false);
-
-
-
-*/
-
-
-
-
-
-
 var renderPlayers = function() {
+    players.forEach(function (playerItem) {
+        checkKeyStates(playerItem);
+    });
+//    deltaTime = clock.getDelta();
+       // socket.emit('updateWorld', players) //  надо ли переносить в checkKeyStates?? !!!!!!!!!!! Или вообще на месте обрабатывать в consumer'е
+}
+
+var resetMoveStates = function(){
     players.forEach(function (playerItem) {
 
 
-        //console.log(playerItem.playerId);
-        //console.log(playerItem.keyState);
-        //console.log(playerItem.position);
-        //console.log(playerItem.rotation);
-
-        checkKeyStates(playerItem);
+        playerItem.moveState = {
 
 
+            moving: false,
+            front: false,
+            Backwards: false,
+            left: false,
+            right: false,
+            speed: .1,
+            angle: 0,
+            hitOnce: false
+        };
     });
-   // socket.emit('updateWorld', players) //  надо ли переносить в checkKeyStates?? !!!!!!!!!!! Или вообще на месте обрабатывать в consumer'е
 }
 
 //setInterval(renderPlayers,300)
@@ -340,9 +234,11 @@ module.exports.removePlayer = removePlayer;
 module.exports.updatePlayerData = updatePlayerData;
 module.exports.playerForId = playerForId;
 
-module.exports.onKeyDown = onKeyDown;
-module.exports.onKeyUp = onKeyUp;
-module.exports.onMouseDown = onMouseDown;
-module.exports.onMouseUp = onMouseUp;
+//module.exports.onKeyDown = onKeyDown;
+//module.exports.onKeyUp = onKeyUp;
+//module.exports.onMouseDown = onMouseDown;
+//module.exports.onMouseUp = onMouseUp;
 
-module.exports.renderPlayers=renderPlayers;
+module.exports.renderPlayers = renderPlayers;
+
+module.exports.resetMoveStates = resetMoveStates;

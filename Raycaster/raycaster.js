@@ -2,7 +2,11 @@
 
 
 var mouse = new THREE.Vector2(), INTERSECTED;
+
 var raycaster = new THREE.Raycaster();
+var raycaster2 = new THREE.Raycaster();
+var raycaster3 = new THREE.Raycaster();
+
 /*
 var origin = new THREE.Vector3(0,0.6,0);
 
@@ -33,10 +37,10 @@ function onDocumentMouseMoveRaycater( event ) {
     event.preventDefault();
     mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
     mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-    console.log('x: '+ mouse.x + ' y: '+ mouse.y)
+  //  console.log('x: '+ mouse.x + ' y: '+ mouse.y)
 };
 
-
+//&& !(intersects[0].object instanceof THREE.AxisHelper)
 
 // CALL in RENDER Loop:
 function Raycaster (camera) {
@@ -45,7 +49,7 @@ function Raycaster (camera) {
     raycaster.setFromCamera(mouse, camera);
     var intersects = raycaster.intersectObjects(scene.children);
     if (intersects.length > 0) {
-        if (INTERSECTED != intersects[0].object  && !(intersects[0].object instanceof THREE.AxisHelper)) {
+        if (INTERSECTED != intersects[0].object  ) {
             if (INTERSECTED) INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex);
             INTERSECTED = intersects[0].object;
             INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
@@ -63,17 +67,20 @@ function Raycaster (camera) {
 }
 
 
+
+
+
+
+
+
 function Raycaster2 (camera) {
 
-    var dist = new THREE.Vector3(mouse.x, mouse.y, 0.5 ).unproject( camera ).sub(origin);//.normalize();
+  //  var mouse = new THREE.Vector2(0,0); // overrides!!!!
 
-    console.log (new THREE.Vector3(mouse.x, mouse.y, 0.5 ).unproject( camera )).sub(origin);
-    raycaster.set(origin, dist);
-    var intersects = raycaster.intersectObjects(scene.children);
-    if (intersects.length > 0) {
-        if (INTERSECTED != intersects[0].object
-            && !(intersects[0].object instanceof THREE.AxisHelper)
-            && !(intersects[0].object instanceof THREE.ArrowHelper))  {
+    raycaster2.setFromCamera(mouse, camera);
+    var intersects = raycaster2.intersectObjects(objects);  //objects is global
+    if (intersects.length > 0 ) {
+        if (INTERSECTED != intersects[0].object  ) {
             if (INTERSECTED) INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex);
             INTERSECTED = intersects[0].object;
             INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
@@ -84,14 +91,89 @@ function Raycaster2 (camera) {
         INTERSECTED = null;
     }
 
+    if (intersects.length > 0){
+        var mouse3D = intersects[0].point;
+        Raycaster3(mouse3D);
+        rayPlayerToMouse(mouse3D);
+
+    }
 
 
-    if(!scene.getObjectByName('sphere1')) scene.add( sphere1 );
-    sphere1.position.set(origin.x,origin.y,origin.z);
 
 
-    if(!scene.getObjectByName('sphere2')) scene.add( sphere2 );
-    sphere2.position.set(dist.x,dist.y,dist.z);
+}
+
+function Raycaster3 (direction) {
+
+    //var dirClone = direction.clone();
+
+
+    var arrowHelper = scene.getObjectByName('arrowHelper');
+
+    if(arrowHelper) {
+        arrowHelper.setDirection( direction.clone().sub(new THREE.Vector3(1,1,1)).normalize()); // origin global
+        arrowHelper.setLength(direction.clone().sub(new THREE.Vector3(1,1,1)).length());
+    }
+
+    var sphere1 = scene.getObjectByName('sphere1');
+    if(sphere1) sphere1.position.set(direction.x, direction.y, direction.z);
+
+   // raycaster3.set(THREE.Vector3(0,0,0), direction);
+   // var intersects3 = raycaster3.intersectObjects(scene.children);
+   // if (intersects2.length > 0) {
+   //     arrowHelper.po
+
 
 
 };
+
+
+
+function rayPlayerToMouse(mouse3D){
+
+    var myPlayer = scene.getObjectByName('myPlayer');
+    var line  = scene.getObjectByName('line');
+
+    if (myPlayer && line) {
+        //raycaster
+        var origin = myPlayer.position;
+        var direction = mouse3D.clone().sub(myPlayer.position).normalize();
+        raycaster3.set(origin, direction);
+
+        var intersects = raycaster3.intersectObjects(objects);  //objects is global
+        if (intersects.length > 0 ) {
+            var firstInt3D = intersects[0].point;
+
+
+            var sphere2 = scene.getObjectByName('sphere2');
+            if(sphere2) sphere2.position.set(firstInt3D.x, firstInt3D.y, firstInt3D.z);
+
+            //line
+            line.geometry.verticesNeedUpdate = true;
+            line.geometry.vertices[0] = origin;
+            line.geometry.vertices[1] = firstInt3D;
+
+
+            //pain
+            //console.log(intersects[0].object.name);
+            if(intersects[0].object.name === 'otherPlayer' && myPlayer.userData.mouseState[0] ) {
+
+                socket.emit('playerHit', intersects[0].object.userData.playerId)
+              //  console.log('playerHit emitted for '+ intersects[0].object.userData.playerId)
+               // intersects[0].object.userData.moveState.hitOnce = true; // server should update to false
+
+                //intersects[0].object.userData.actions.painOne.play();
+                //intersects[0].object.userData.actions.painOne.reset();
+            };
+
+        }
+
+
+
+
+    }
+
+
+
+}
+

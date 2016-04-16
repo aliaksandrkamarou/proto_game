@@ -1,3 +1,5 @@
+
+
 ///////////GLOBALS
 var  scene, camera, renderer, raycaster, objects = [];
 var keyState = {};
@@ -9,18 +11,20 @@ var moveSpeed = 0.1;
 var turnSpeed = 0.03;
 var playerData;
 
+
 var otherPlayers = [], otherPlayersId = [];
 
 var mixers =[];
 
+var mouse = new THREE.Vector2();
 ////////////////////////////////////
-var playerForId = function(id){
+ function playerForId(id){
 
     var player;
-    for (var i = 0; i < players.length; i++){
-        if (players[i].playerId === id){
+    for (var i = 0; i < scene.children.length; i++){
+        if (scene.children[i].userData.playerId === id){
 
-            player = players[i];
+            player = scene.children[i];
             break;
 
         }
@@ -34,44 +38,78 @@ var playerForId = function(id){
 
 var createPlayer = function(data){
 
-    console.log('client_world: CLIENT DATA HAS ARRIVED');
-    console.log(data);
+   // console.log('client_world: CLIENT DATA HAS ARRIVED');
+   // console.log(data);
 
 
     var loader = new THREE.JSONLoader();
     //loader.load( "models/animated/flamingo.js", function( geometry )
-    loader.load( "droid.js", function( geometry )
-    {
+    loader.load("droid.js", function (geometry) {
+     //   console.log('loader!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+    //    console.log(geometry);
 
-        var material = new THREE.MeshPhongMaterial( {
+        var material = new THREE.MeshPhongMaterial({
             color: 0xffffff,
             morphTargets: true,
             vertexColors: THREE.FaceColors,
             shading: THREE.FlatShading
-        } );
-        var mesh = new THREE.Mesh( geometry, material );
+        });
+
+        //var material = new THREE.MeshBasicMaterial();
+        var mesh = new THREE.Mesh(geometry, material);
 
         //mesh.rotation.y = -Math.PI / 2;
         //mesh.position.x = - 150;
         //mesh.position.y = 150;
-        mesh.scale.set( .02, .02, .02 );
+        mesh.scale.set(.02, .02, .02);
         mesh.position.y = .5;
 
+        mesh.name = 'myPlayer';
+        mesh.userData.playerId = data.playerId;
 
 
-        scene.add( mesh );
-
-        var player = data ;
-        console.log(player);
+        //var player = data ;
+        //console.log(player);
         //player.playerId= data.playerId;
 
-        player.mixer = new THREE.AnimationMixer( mesh );
+
         //mixer.playerId = data.playerId;
-        player.actions.stand = player.mixer.clipAction( geometry.animations[ 0 ]);
-        player.actions.run = player.mixer.clipAction( geometry.animations[ 1 ] );
-        player.actions.attack = player.mixer.clipAction( geometry.animations[ 2 ] );
+
+        //player.mixer = new THREE.AnimationMixer( mesh );
+        //player.actions.stand = player.mixer.clipAction( geometry.animations[ 0 ]);
+        //player.actions.run = player.mixer.clipAction( geometry.animations[ 1 ] );
+        //player.actions.attack = player.mixer.clipAction( geometry.animations[ 2 ] );
+
         //mixer.clipAction( geometry.animations[ 0]).play();
-        player.actions.stand.play();
+        //player.actions.stand.play();
+
+        mesh.userData.mixer = new THREE.AnimationMixer(mesh);
+        mesh.userData.actions = {};
+        mesh.userData.actions.stand = mesh.userData.mixer.clipAction(geometry.animations[0]);
+        mesh.userData.actions.run = mesh.userData.mixer.clipAction(geometry.animations[1]);
+        mesh.userData.actions.attack = mesh.userData.mixer.clipAction(geometry.animations[2]);
+
+        mesh.userData.actions.painOne = mesh.userData.mixer.clipAction(geometry.animations[3]);
+
+        mesh.userData.actions.wave = mesh.userData.mixer.clipAction(geometry.animations[10]);
+
+        mesh.userData.actions.painOne.setLoop( THREE.LoopOnce, 0 );
+     //   mesh.userData.actions.painOne.loop = THREE.LoopOnce
+        //mesh.userData.actions.painOne.clampWhenFinished = true;
+
+        mesh.userData.actions.stand.play();
+   //     mesh.userData.mixer.update(.1);
+
+
+       // mesh.userData.actions.run.play();
+       // var clipJSON = mesh.userData.actions.stand.toJSON();
+
+        mesh.userData.mouseState={};
+        mesh.userData.keyState={};
+        mesh.userData.moveState = {};
+
+        scene.add(mesh);
+        objects.push(mesh); // raycater / objects is global
 
         // actions.idle = mixer.clipAction( geometry.animations[ 0]);
         //actions.idle.loop = THREE.LoopOnce
@@ -79,63 +117,83 @@ var createPlayer = function(data){
         //mixer.clipAction( geometry.animations[ 7]).play();
 
 
-        players.push( player );
+        // players.push( player );
 
-    } );
+
+    });
+
+    socket.emit('onWindowResize',camera.aspect);
+  //  console.log('create player camera.aspect '+ camera.aspect);
+    if (!camera.aspect) alert('camera aspect is empty'); // try-catch
 
 };
 
 
 var addOtherPlayer = function(data){
-    console.log('client_world: Other PLayer DATA HAS ARRIVED');
-    console.log(data);
+ //   console.log('client_world: Other PLayer DATA HAS ARRIVED');
+ //   console.log(data);
 
 
 
     var loader = new THREE.JSONLoader();
     //loader.load( "models/animated/flamingo.js", function( geometry )
-    loader.load( "droid.js", function( geometry )
-    {
+    loader.load("droid.js", function (geometry) {
 
-        var material = new THREE.MeshPhongMaterial( {
+
+        var material = new THREE.MeshPhongMaterial({
             color: 0xffffff,
             morphTargets: true,
             vertexColors: THREE.FaceColors,
             shading: THREE.FlatShading
-        } );
-        var mesh = new THREE.Mesh( geometry, material );
+        });
+        var mesh = new THREE.Mesh(geometry, material);
+
+
+
+
+        //exp
+       // var bufferGeometry = new THREE.BufferGeometry().fromGeometry(geometry);
+        //
 
         //mesh.rotation.y = -Math.PI / 2;
         //mesh.position.x = - 150;
         //mesh.position.y = 150;
-        mesh.scale.set( .02, .02, .02 );
+        mesh.scale.set(.02, .02, .02);
         mesh.position.y = .5;
 
+        mesh.name = 'otherPlayer';
+        mesh.userData.playerId = data.playerId;
 
 
-        scene.add( mesh );
+        mesh.userData.mixer = new THREE.AnimationMixer(mesh);
+        mesh.userData.actions = {};
+        mesh.userData.actions.stand = mesh.userData.mixer.clipAction(geometry.animations[0]);
+        mesh.userData.actions.run = mesh.userData.mixer.clipAction(geometry.animations[1]);
+        mesh.userData.actions.attack = mesh.userData.mixer.clipAction(geometry.animations[2]);
 
-        var player = data ;
-        console.log(player);
-        //player.playerId= data.playerId;
+        mesh.userData.actions.painOne = mesh.userData.mixer.clipAction(geometry.animations[3]);
+       // mesh.userData.actions.painOne.loop = THREE.LoopOnce
 
-        player.mixer = new THREE.AnimationMixer( mesh );
-        //mixer.playerId = data.playerId;
-        player.actions.stand = player.mixer.clipAction( geometry.animations[ 0 ]);
-        player.actions.run = player.mixer.clipAction( geometry.animations[ 1 ] );
-        player.actions.attack = player.mixer.clipAction( geometry.animations[ 2 ] );
-        //mixer.clipAction( geometry.animations[ 0]).play();
-        player.actions.stand.play();
+        mesh.userData.actions.painOne.setLoop( THREE.LoopOnce, 0 );
+        //mesh.userData.actions.painOne.setDuration(1);
+       // mesh.userData.actions.painOne.clampWhenFinished = true;
 
-        // actions.idle = mixer.clipAction( geometry.animations[ 0]);
-        //actions.idle.loop = THREE.LoopOnce
-        // actions.idle.play();
-        //mixer.clipAction( geometry.animations[ 7]).play();
+       // mesh.userData.actions.stand.play();
+        //var player = scene.getObjectByName('myPlayer')
+        mesh.userData.actions.stand.play();
 
 
-        players.push( player );
 
-    } );
+        mesh.userData.mouseState={};
+        mesh.userData.keyState={};
+        mesh.userData.moveState = {};
+
+
+
+        scene.add(mesh);
+        objects.push(mesh); // raycater / objects is global
+
+    });
 
 
 };
@@ -143,7 +201,7 @@ var addOtherPlayer = function(data){
 
 var removeOtherPlayer = function (data) {  // need to delete two objects!!!
 
-    scene.remove(playerForId(data.playerId).mixer._root);
+    scene.remove(playerForId(data.playerId));
 
 };
 
@@ -157,20 +215,25 @@ document.addEventListener('keyup', onKeyUp, false );
 document.addEventListener('mousedown', onMouseDown, false );
 document.addEventListener('mouseup', onMouseUp, false );
 
+
+//document.addEventListener( 'mousemove', onDocumentMouseMoveRaycater, false );
+
+//document.addEventListener( 'mousemove', onDocumentMouseMoveRaycater, false );
+
 function onKeyDown( event ){
 
     //event = event || window.event;
     socket.emit('keydown',event.keyCode || event.which); // emit keyCode or which depending on browser
-    console.log('keydown emitted ' + event.keyCode || event.which);
-    console.log(event);
+  //  console.log('keydown emitted ' + event.keyCode || event.which);
+  //  console.log(event);
 };
 
 function onKeyUp( event ) {
 
 
     socket.emit('keyup',event.keyCode || event.which); // emit keyCode or which depending on browser
-    console.log('keyup emitted ' + event.keyCode || event.which);
-    console.log(event);
+  //  console.log('keyup emitted ' + event.keyCode || event.which);
+  //  console.log(event);
 
 };
 
@@ -183,30 +246,70 @@ function onMouseUp( event ){
     socket.emit('mouseup', event.button)
 };
 
+/*
+function onDocumentMouseMoveRaycater( event ) {
+    event.preventDefault();
+
+    var mouse ={};// override
+    mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+    mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+    console.log('x: '+ mouse.x + ' y: '+ mouse.y)
+    socket.emit('mouse2D+',mouse );
+
+};
+*/
+var delta ;
+var clock = new THREE.Clock();
 
 var updatePlayerData = function(data){
 
-    data.forEach(function(playerData){
+    delta = data[1];
+ //   console.log('TIME!!!!!!!!!!!!!!!!!!!!!!!!!!!'+delta)
+    data[0].forEach(function(playerData){
 
         //console.log('playerData');
         //console.log(playerData);
 
         var player = playerForId(playerData.playerId);
         if (player){
-            player.mixer.getRoot().position.set(playerData.position.x, playerData.position.y, playerData.position.z);
-            player.mixer.getRoot().rotation.set(playerData.rotation.x, playerData.rotation.y, playerData.rotation.z);
+            player.position.set(playerData.position.x, playerData.position.y, playerData.position.z);
+            player.rotation.set(playerData.rotation.x, playerData.rotation.y, playerData.rotation.z);
 
 
-            if ((playerData.keyState[38] || playerData.keyState[87]) && !player.actions.run.isScheduled())
-                player.actions.run.play(); // run play anim
-            if ((!playerData.keyState[38] && !playerData.keyState[87]) && player.actions.run.isScheduled())
-                player.actions.run.stop(); //run stop anim
+            if ((playerData.keyState[38] || playerData.keyState[87]) && !player.userData.actions.run.isScheduled())
+                player.userData.actions.run.play(); // run play anim
+            if ((!playerData.keyState[38] && !playerData.keyState[87]) && player.userData.actions.run.isScheduled())
+                player.userData.actions.run.stop(); //run stop anim
 
-            if (playerData.mouseState[0] && !player.actions.attack.isScheduled())
-                player.actions.attack.play(); // attack play anim
-            if (!playerData.mouseState[0] && player.actions.attack.isScheduled())
-                player.actions.attack.stop(); // attack stop anim
+            if (playerData.mouseState[0] && !player.userData.actions.attack.isScheduled())
+                player.userData.actions.attack.play(); // attack play anim
+            if (!playerData.mouseState[0] && player.userData.actions.attack.isScheduled())
+                player.userData.actions.attack.stop(); // attack stop anim
 
+            player.userData.moveState = playerData.moveState;
+
+            if (player.userData.moveState.hitOnce) {
+               // console.log('player HIT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+                player.userData.actions.painOne.play();
+                player.userData.actions.painOne.reset();
+            }
+
+            player.userData.mouseState=playerData.mouseState;
+            player.userData.keyState = playerData.keyState;
+          //  player.userData.moveState = playerData.moveState; // update to false
+         //   player.userData.mixer.update(worldTimeDelta);
+
+            player.userData.mixer.update(delta);
+
+
+
+
+
+
+
+
+        //    var intersects =[];
+        //    player.mixer.getRoot().raycast(raycaster3,intersects);
 
             //player.position.set(playerData.position.x, playerData.position.y, playerData.position.z);
             //player.rotation.set(playerData.rotation.x, playerData.rotation.y, playerData.rotation.z);
@@ -218,19 +321,20 @@ var updatePlayerData = function(data){
 
     });
    // console.log(players);
+
+
+
+   // animate();
 };
 
 
 
-window.addEventListener('DOMContentLoaded', function () {
     var width = window.innerWidth;
     var height = window.innerHeight;
-    var clock = new THREE.Clock();
+
 
     scene = new THREE.Scene();
     scene.fog = new THREE.FogExp2(0x000000, 0.05);
-
-
 
 
     //scene.add(player.model.objects);
@@ -280,7 +384,7 @@ window.addEventListener('DOMContentLoaded', function () {
     renderer.shadowMapEnabled = true;
 //	renderer.shadowMapSoft = true;
 
-    document.body.appendChild(renderer.domElement);
+
 ///
  //   var dir = new THREE.Vector3( 1, 0, 0 );
  //   var origin = new THREE.Vector3( 0, 0, 0 );
@@ -290,12 +394,70 @@ window.addEventListener('DOMContentLoaded', function () {
    // var arrowHelper = new THREE.ArrowHelper( dir, origin, length, hex );
    // scene.add( arrowHelper );
 ///
+// controls
+
+    var controls;
+
+    controls = new THREE.OrbitControls( camera, renderer.domElement );
+    //controls.addEventListener( 'change', render ); // add this only if there is no animation loop (requestAnimationFrame)
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.25;
+    controls.enableZoom = true;
+
+ //   controls = new THREE.PointerLockControls( camera );
+
+ //   scene.add( controls.getObject() );
+
+   // controls = new THREE.PointerLockControls(camera);
+   // scene.add( controls.getObject() )
+    // helper
+    //   var axisHelper = new THREE.AxisHelper( 5 );
+    //   scene.add( axisHelper );
+    var dir = new THREE.Vector3( 2, 2, 2).normalize();
+    var origin = new THREE.Vector3( 1, 1, 1 );
+    var length = 1;
+    var hex = 0xffff00;
+
+    var arrowHelper = new THREE.ArrowHelper( dir, origin, length, hex );
+    arrowHelper.name = 'arrowHelper';
+    scene.add( arrowHelper );
+
+
+
+    var geometry1 = new THREE.SphereGeometry( 5, 8, 8 );
+    var material1 = new THREE.MeshLambertMaterial( {color: 0xffff00} );
+    var sphere1 = new THREE.Mesh( geometry1, material1 );
+    sphere1.scale.set( .01, .01, .01 );
+    sphere1.name = 'sphere1';
+    sphere1.castShadow = true;
+    scene.add(sphere1);
+
+
+    var geometry2 = new THREE.SphereGeometry( 6, 4, 4 );
+    var material2 = new THREE.MeshLambertMaterial( {color: 0xffffff} );
+    var sphere2 = new THREE.Mesh( geometry2, material2 );
+    sphere2.scale.set( .01, .01, .01 );
+    sphere2.name = 'sphere2';
+    sphere2.castShadow = true;
+    scene.add(sphere2);
+
+
+
+
+    var lineMaterial = new THREE.LineBasicMaterial({ color: 0x0000ff });
+    var lineGeometry = new THREE.Geometry();
+    //lineGeometry.verticesNeedUpdate = true;
+    lineGeometry.vertices.push( new THREE.Vector3( -10, 0, 0 ), new THREE.Vector3( 0, 10, 0 ) );
+    var line = new THREE.Line( lineGeometry, lineMaterial );
+    line.name = 'line';
+
+
+    scene.add( line );
 
 
 
 
 
-    animate();
 
     /**
      * create field
@@ -317,7 +479,9 @@ window.addEventListener('DOMContentLoaded', function () {
     plane.rotation.x = - Math.PI / 2; // r_75
     plane.castShadow = false;
     plane.receiveShadow = true;
+    plane.name = 'plane';
     scene.add(plane);
+    objects.push(plane);
 
     var meshArray = [];
     var geometry = new THREE.CubeGeometry(1, 1, 1);
@@ -328,355 +492,63 @@ window.addEventListener('DOMContentLoaded', function () {
         meshArray[i].position.z = -1 * i * 4;
         meshArray[i].castShadow = true;
         meshArray[i].receiveShadow = true;
+        meshArray[i].name='cube';
         scene.add(meshArray[i]);
+        //raycaster
+        objects.push(meshArray[i]);
     }
 
-    /**
-     * load md2 model
-     */
-    /*
-    var md2frames = {
-        // first, last, fps
-        stand: [0, 39, 9, {state: 'stand', action: false}],   // STAND
-        run: [40, 45, 10, {state: 'stand', action: false}],   // RUN
-        attack: [46, 53, 10, {state: 'stand', action: true}],   // ATTACK
-        pain1: [54, 57, 7, {state: 'stand', action: true}],   // PAIN_A
-        pain2: [58, 61, 7, {state: 'stand', action: true}],   // PAIN_B
-        pain3: [62, 65, 7, {state: 'stand', action: true}],   // PAIN_C
-        jump: [66, 71, 7, {state: 'stand', action: true}],   // JUMP
-        flip: [72, 83, 7, {state: 'stand', action: true}],   // FLIP
-        salute: [84, 94, 7, {state: 'stand', action: true}],   // SALUTE
-        taunt: [95, 111, 10, {state: 'stand', action: true}],   // FALLBACK
-        wave: [112, 122, 7, {state: 'stand', action: true}],   // WAVE
-        point: [123, 134, 6, {state: 'stand', action: true}],   // POINT
-        crstand: [135, 153, 10, {state: 'crstand', action: false}],   // CROUCH_STAND
-        crwalk: [154, 159, 7, {state: 'crstand', action: false}],   // CROUCH_WALK
-        crattack: [160, 168, 10, {state: 'crstand', action: true}],   // CROUCH_ATTACK
-        crpain: [196, 172, 7, {state: 'crstand', action: true}],   // CROUCH_PAIN
-        crdeath: [173, 177, 5, {state: 'freeze', action: true}],   // CROUCH_DEATH
-        death1: [178, 183, 7, {state: 'freeze', action: true}],   // DEATH_FALLBACK
-        death2: [184, 189, 7, {state: 'freeze', action: true}],   // DEATH_FALLFORWARD
-        death3: [190, 197, 7, {state: 'freeze', action: true}],   // DEATH_FALLBACKSLOW
-        //boom    : [ 198, 198,  5 ]    // BOOM
-    }
-    */
-
-  /*
-    function changeMotion(motion) {
-        player.model.motion = motion;
-        player.model.state = md2frames[motion][3].state;
-
-        var animMin = md2frames[motion][0];
-        var animMax = md2frames[motion][1];
-        var animFps = md2frames[motion][2];
-        md2meshBody.time = 0;
-        md2meshBody.duration = 1000 * (( animMax - animMin ) / animFps);
-        md2meshBody.setFrameRange(animMin, animMax);
-    }
-
-    var md2meshBody;
-    var material = new THREE.MeshLambertMaterial({
-        map: THREE.ImageUtils.loadTexture('1.png'),
-        ambient: 0x999999,
-        color: 0xffffff,
-        specular: 0xffffff,
-        shininess: 25,
-        morphTargets: true
-    });
-    var loader = new THREE.JSONLoader();
-    loader.load('droid.js', function (geometry) {
-        md2meshBody = new THREE.MorphAnimMesh(geometry, material);
-        md2meshBody.rotation.y = -Math.PI / 2;
-        md2meshBody.scale.set(.02, .02, .02);
-        md2meshBody.position.y = .5;
-        md2meshBody.castShadow = true;
-        md2meshBody.receiveShadow = true;
-        changeMotion('stand');
-        player.model.objects.add(md2meshBody);
-        console.log(player.model.objects)
-    });
-*/
-    /**
-     * action
-     */
-    /*
-    document.addEventListener('keydown', function (e) {
-        if (!/67/.test(e.keyCode)) {
-            return
-        } //c key
-        if (player.model.state === 'stand') {
-            changeMotion('crstand');
-        } else if (player.model.state === 'crstand') {
-            changeMotion('stand');
-        }
-    }, false);
-*/
-    /**
-     * move
-     */
-        /*
-    var moveState = {
-        moving: false,
-        front: false,
-        Backwards: false,
-        left: false,
-        right: false,
-        speed: .1,
-        angle: 0
-    }
-
-    function move() {
-        if (player.model.motion !== 'run' && player.model.state === 'stand') {
-            changeMotion('run');
-        }
-        if (player.model.motion !== 'crwalk' && player.model.state === 'crstand') {
-            changeMotion('crwalk');
-        }
-        var speed = moveState.speed;
-        if (player.model.state === 'crstand') {
-            speed *= .5;
-        }
-        if (player.model.state === 'freeze') {
-            speed *= 0;
-        }
-
-        var direction = moveState.angle;
-        if (moveState.front && !moveState.left && !moveState.Backwards && !moveState.right) {
-            direction += 0
-        }
-        if (moveState.front && moveState.left && !moveState.Backwards && !moveState.right) {
-            direction += 45
-        }
-        if (!moveState.front && moveState.left && !moveState.Backwards && !moveState.right) {
-            direction += 90
-        }
-        if (!moveState.front && moveState.left && moveState.Backwards && !moveState.right) {
-            direction += 135
-        }
-        if (!moveState.front && !moveState.left && moveState.Backwards && !moveState.right) {
-            direction += 180
-        }
-        if (!moveState.front && !moveState.left && moveState.Backwards && moveState.right) {
-            direction += 225
-        }
-        if (!moveState.front && !moveState.left && !moveState.Backwards && moveState.right) {
-            direction += 270
-        }
-        if (moveState.front && !moveState.left && !moveState.Backwards && moveState.right) {
-            direction += 315
-        }
-
-        player.model.objects.rotation.y = direction * Math.PI / 180;
-        player.position.x -= Math.sin(direction * Math.PI / 180) * speed;
-        player.position.z -= Math.cos(direction * Math.PI / 180) * speed;
-    }
-
-    var timer;
-    document.addEventListener('keydown', function (e) {
-        if (!/65|68|83|87/.test(e.keyCode)) {
-            return
-        }
-        if (e.keyCode === 87) {
-            moveState.front = true;
-            moveState.Backwards = false;
-        } else if (e.keyCode === 83) {
-            moveState.Backwards = true;
-            moveState.front = false;
-        } else if (e.keyCode === 65) {
-            moveState.left = true;
-            moveState.right = false;
-        } else if (e.keyCode === 68) {
-            moveState.right = true;
-            moveState.left = false;
-        }
-        if (!moveState.moving) {
-            if (player.model.state === 'stand') {
-                changeMotion('run');
-            }
-            if (player.model.state === 'crstand') {
-                changeMotion('crwalk');
-            }
-            moveState.moving = true;
-            move();
-            timer = setInterval(function () {
-                move();
-            }, 1000 / 60);
-        }
-    }, false);
-
-    document.addEventListener('keyup', function (e) {
-        if (!/65|68|83|87/.test(e.keyCode)) {
-            return
-        }
-        if (e.keyCode === 87) {
-            moveState.front = false;
-        } else if (e.keyCode === 83) {
-            moveState.Backwards = false;
-        } else if (e.keyCode === 65) {
-            moveState.left = false;
-        } else if (e.keyCode === 68) {
-            moveState.right = false;
-        }
-        if (!moveState.front && !moveState.Backwards && !moveState.left && !moveState.right) {
-            changeMotion(player.model.state);
-            moveState.moving = false;
-            clearInterval(timer);
-        }
-    }, false);
 
 
-    /**
-     * camera rotation
-     */
-    /*
-    var getElementPosition = function (element) {
-        var top = left = 0;
-        do {
-            top += element.offsetTop || 0;
-            left += element.offsetLeft || 0;
-            element = element.offsetParent;
-        }
-        while (element);
-        return {top: top, left: left};
-    }
 
-    var pointer = {x: 0, y: 0};
-    document.addEventListener('mousemove', function (e) {
-        var mouseX = e.clientX - getElementPosition(renderer.domElement).left;
-        var mouseY = e.clientY - getElementPosition(renderer.domElement).top;
-        pointer.x = (mouseX / renderer.domElement.width) * 2 - 1;
-        pointer.y = -(mouseY / renderer.domElement.height) * 2 + 1;
-    }, false);
-
-    var oldPointerX = oldPointerY = 0;
-    document.addEventListener('mousedown', rotateStart, false);
-    function rotateStart() {
-        oldPointerX = pointer.x;
-        oldPointerY = pointer.y;
-        renderer.domElement.addEventListener('mousemove', rotate, false);
-        renderer.domElement.addEventListener('mouseup', rotateStop, false);
-    }
-
-    function rotateStop() {
-        renderer.domElement.removeEventListener('mousemove', rotate, false);
-        renderer.domElement.removeEventListener('mouseup', rotateStop, false);
-    }
-
-    function rotate() {
-        player.camera.x += (oldPointerX - pointer.x) * player.camera.speed;
-        player.camera.y += (oldPointerY - pointer.y) * player.camera.speed;
-        if (player.camera.y > 150) {
-            player.camera.y = 150;
-        }
-        if (player.camera.y < -150) {
-            player.camera.y = -150;
-        }
-
-        moveState.angle = (player.camera.x / 2) % 360;
-
-        oldPointerX = pointer.x;
-        oldPointerY = pointer.y;
-    }
-
-*/
-    /**
-     * render
-     */
-    // helper
-   //   var axisHelper = new THREE.AxisHelper( 5 );
-   //   scene.add( axisHelper );
 
     function animate() {
 
+        //setTimeout(animate,14);
         requestAnimationFrame(animate);
 
 
-        var delta = clock.getDelta();
-
-        for ( var i = 0; i < players.length; i ++ ) {
-
-            players[ i ].mixer.update( delta );
-
-        }
 
 
+        //var delta = clock.getDelta();
 
-        /*
+    //    for ( var i = 0; i < players.length; i ++ ) {
 
+    //        players[ i ].mixer.update( delta );
 
-        var delta = clock.getDelta();
-
-
-        //if ( player && player.md2meshBody && player.md2meshBody.updateAnimation) {
-            var isEndFleame = (player.md2frames[player.model.motion][1] === player.md2meshBody.currentKeyframe);
-            var isAction = player.md2frames[player.model.motion][3].action;
-
-            if (!isAction || (isAction && !isEndFleame)) {
-                player.md2meshBody.updateAnimation(1000 * delta);
-            } else if (/freeze/.test(player.md2frames[player.model.motion][3].state)) {
-                //dead...
-            } else {
-                player.changeMotion(player.model.state);
-            }
-        }
-        */
-
-        //if ( player ){
-           // checkKeyStates();
-        //};
-
-
+    //    }
 /*
-        if(player) // if player object loaded then do
-        {
+       for (var i = 0; i < scene.children.length; i ++ ){   // all objects is too many
 
-            player.model.objects.position.x = player.position.x;
-            player.model.objects.position.y = player.position.y;
-            player.model.objects.position.z = player.position.z;
+            if(scene.children[i].userData.mixer) scene.children[i].userData.mixer.update(delta);
 
-            // camera rotate x
-            camera.position.x = player.position.x + player.camera.distance * Math.sin((player.camera.x) * Math.PI / 360);
-            camera.position.z = player.position.z + player.camera.distance * Math.cos((player.camera.x) * Math.PI / 360);
-
-            //camera rotate y
-            //camera.position.x = player.position.x + player.camera.distance * Math.cos( (player.camera.y) * Math.PI / 360 );
-            camera.position.y = player.position.y + player.camera.distance * Math.sin((player.camera.y) * Math.PI / 360);
-            //camera.position.z = player.position.z + player.camera.distance * Math.cos( (player.camera.y) * Math.PI / 360 );
-
-            camera.position.y += 1;
-            //console.log(camera.position.z)
-
-            var vec3 = new THREE.Vector3(player.position.x, player.position.y, player.position.z)
-            camera.lookAt(vec3);
-
-            // model animation
-            var delta = clock.getDelta();
-            if (md2meshBody) {
-                var isEndFleame = (md2frames[player.model.motion][1] === md2meshBody.currentKeyframe);
-                var isAction = md2frames[player.model.motion][3].action;
-
-                if (!isAction || (isAction && !isEndFleame)) {
-                    md2meshBody.updateAnimation(1000 * delta);
-                } else if (/freeze/.test(md2frames[player.model.motion][3].state)) {
-                    //dead...
-                } else {
-                    changeMotion(player.model.state);
-                }
-            }
-        }  // end if
+        }
+   */
+    //   console.log('clock:'+ clock.getDelta() +' server: '+ delta)
+       //controls.update();
 
 
-*/
         // raycaster.js
-        Raycaster(camera);
+        Raycaster2(camera);
         renderer.clear();
         renderer.render(scene, camera);
+
+
     }
 
 
-}, false);
 
-/*
+
+
+
+window.addEventListener('DOMContentLoaded', function () {
+    document.body.appendChild(renderer.domElement);
+    animate();
+
+    }
+
+    , false);
+
 window.addEventListener( 'resize', onWindowResize, false );
 
 function onWindowResize() {
@@ -685,6 +557,7 @@ function onWindowResize() {
     camera.updateProjectionMatrix();
 
     renderer.setSize( window.innerWidth, window.innerHeight );
+    socket.emit('onWindowResize', camera.aspect)
 
 };
-*/
+

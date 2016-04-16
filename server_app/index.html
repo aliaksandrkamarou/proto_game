@@ -1,0 +1,115 @@
+<html>
+<head>
+    <title>My first Three.js app</title>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%
+        }
+    </style>
+</head>
+<body>
+<script src="../lib/three_r75.js"></script>
+<script src="../socket.io/socket.io.js"></script>
+<script src="../lib/js/loaders/OBJLoader.js"></script>
+<script src="../lib/js/exporters/OBJExporter.js"></script>
+<script>
+    var loader = new THREE.ObjectLoader();
+    var jsonLoader = new THREE.JSONLoader();
+    var scene = new THREE.Scene();
+    var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+    var renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    camera.position.z = 6;
+    camera.position.x = 6;
+    camera.position.y = 6;
+    camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+
+    var light = new THREE.DirectionalLight(0xffffff, 1.5);
+    light.position.set(3, 3, 3)//.normalize();
+    light.castShadow = true;
+    scene.add(light);
+
+    jsonLoader.load('../client_app/droid.js', function(geometry){
+        var droid = new  THREE.Mesh();
+        var material = new THREE.MeshPhongMaterial({
+            color: 0x00fffff,
+            morphTargets: true,
+            vertexColors: THREE.FaceColors,
+            shading: THREE.FlatShading
+        });
+
+        var droid = new  THREE.Mesh(geometry,material);
+        droid.scale.set(.2,.2,.2)
+        scene.add(droid)
+        console.log('loaded');
+
+    });
+
+
+
+
+
+    var clock = new THREE.Clock;
+    console.log(clock.getDelta());
+    animate();
+
+
+    function animate() {
+
+        requestAnimationFrame(animate);
+        renderer.clear();
+        renderer.render(scene, camera);
+    };
+
+
+    var socket = io();
+
+
+
+    socket.on('connect', function () {
+        console.log('client connected')
+    });
+
+
+    document.addEventListener('keydown', onKeyDown, false);
+    function onKeyDown(event) {
+
+        socket.emit('giveMeData', event.keyCode || event.which); // emit keyCode or which depending on browser
+        console.log('keydown emitted ' + event.keyCode || event.which);
+
+    };
+
+
+    socket.on('hereIsData', function (data) {
+        console.log('data has come')
+        var res = loader.parse(data[0]);
+        console.log(res);
+        res.scale.set(.2,.2,.2)
+        //data[1];
+       // var mixer = new THREE.AnimationMixer(res);
+        //mixer.clipAction(res.geometry.animations[10]).play();
+        //mixier.update(.15)
+
+        scene.add(res);
+
+
+    });
+
+
+
+
+
+
+
+</script>
+</body>
+</html>

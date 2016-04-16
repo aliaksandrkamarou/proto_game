@@ -15,10 +15,17 @@
             left: 0;
         }
     </style>
+
     <script src="../lib/Three_r75.js"></script>
+    <script src="../lib/js/controls/OrbitControls.js"></script>
     <script src="../socket.io/socket.io.js"></script>
+    <script src="../lib/js/controls/PointerLockControls.js"></script>
+    <script src="../lib/js/controls/MouseControls.js"></script>
+
     <script src="client_world_droid.js"></script>
     <script src="../Raycaster/raycaster.js"></script>
+    <script src="../lib/js/libs/stats.min.js"></script>
+
     <script>
         var socket = io();
         socket.on('connect', function () {
@@ -45,10 +52,12 @@
 
         socket.on('updateWorld', function(data){
 
-            console.log('WORLD UPDATE FOR!!!!!!!!!!!!');
-            console.log(socket.id);
+         //   console.log('WORLD UPDATE FOR!!!!!!!!!!!!');
+         //   console.log(socket.id);
             updatePlayerData(data);
         })
+
+
 
 
        // socket.on('socketID', function(data){
