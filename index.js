@@ -35,6 +35,7 @@ app.use('/lib',express.static(__dirname+'/lib'));
 app.use('/client_app',express.static(__dirname+'/client_app'));
 app.use('/anim',express.static(__dirname+'/anim'));
 app.use('/Raycaster',express.static(__dirname+'/Raycaster'));
+app.use('/Helpers',express.static(__dirname+'/Helpers'));
 
 app.use('/server_app',express.static(__dirname+'/server_app'));
 
@@ -54,10 +55,13 @@ io.on('connection', function(socket){
   // CREATE NEW PLAYER on CLIENT
     var id = socket.id;  // assign player id as socket.id
     var player = world.addPlayer(id);   // returns player + side effect(!) add player to players, so it can be retrived by world.playerForId
+
+    socket.emit('droid', world.jsonContent);
     //var player = world.playerForId(id); // get player's data by id
-    console.log(player);
+
     socket.emit('createPlayer', player);  // emit 'createPlayer' with player's data to client
     console.log('create player emitted');
+    console.log(player);
  //END OF CREATE NEW PLAYER on CLIENT
 
 
@@ -84,6 +88,11 @@ io.on('connection', function(socket){
         world.removePlayer( player );
     });
 
+
+    socket.on('rtt test',function (startTime, cb) {
+      //  console.log(cb.toString())
+        cb(startTime);
+    });
 
     //keyDown consumer
     socket.on('keydown', function(event){
@@ -124,21 +133,16 @@ io.on('connection', function(socket){
     });
 
 
-    socket.on('mouseMoveRay',function(data){
-        console.log('mouseMoveRay ' + data.x+' '+data.y);
-    });
-
-
-
 
 
     socket.on('mouse2D',function(data){
 
-        console.log('mouse position!!!!!!!!!!!! :' + id);
-        console.log(data);
+       // console.log('mouse position!!!!!!!!!!!! :' + id);
+       // console.log(data);
         //console.log(data);
 
-        player.mouse2D = data;
+        player.mouse2D.set(data.x,data.y); // danger try/catch
+       // console.log(player.mouse2D);
 
         //player.moveState.hitOnce = true;
         //console.log(event);
@@ -147,22 +151,57 @@ io.on('connection', function(socket){
     });
 
     socket.on('playerHit', function(id){
-       // console.log('playerHit got for' + id);
+        console.log('playerHit got for' + id);
         var otherPlayer = world.playerForId(id);
-        otherPlayer.moveState.hitOnce = true;
+        console.log(otherPlayer)
+        if(otherPlayer) otherPlayer.moveState.hitOnce = true; // danger -- remove player from raycast objects
 
     })
 
-    socket.on('onWindowResize', function(ratio){
+    socket.on('onWindowResize', function(aspect){
+        console.log('input apect '+ aspect)
+        console.log(player.keyState);
+        player.camera.aspect = aspect;
+        player.camera.updateProjectionMatrix();
+        player.cameraJSON = player.camera.toJSON();
+        console.log(player === world.playerForId(id));
+
+        var loader = new THREE.ObjectLoader();
+        console.log(player.cameraJSON);
+        console.log(loader.parse(player.cameraJSON));
+
+        console.log('acpect :'+ player.camera.aspect+ 'for player id'+ id)
 
     })
 
+/*
+    socket.on('rAF update from Client', function(){
+        socket.emit('rAF update from Server', [players,delta]) /// EMIT TO ALL  // IS IT SYNC?????????
+    })
+*/
+/*
+    socket.on('test', function(data, cb){
 
 
+        cb(data);
 
+    } );
+*/
 
     socket.on('disconnect', function(){
-        console.log('user disconnected');});
+        console.log('user disconnected '+ id);});
+
+
+    socket.on('UPD_world_CLI', function(ps,cb){
+
+        console.log('rAF fired ' + ps)
+
+
+        cb([world.players,g_lastTick,ps])
+    } )
+
+
+
 
 
     socket.on('giveMeData', function (data) {
@@ -197,7 +236,7 @@ io.on('connection', function(socket){
 
                     droid.scale.set(.2, .2, .2);
                     var jsonDroid=droid.toJSON()
-                    console.log(geometry.animations)
+                   // console.log(geometry.animations)
 
                     //jsonDroid.animations = geometry.animations;
                    // console.log(jsonDroid);
@@ -230,6 +269,10 @@ io.on('connection', function(socket){
 
 
 
+
+
+
+
 });
 
 
@@ -240,26 +283,59 @@ io.on('connection', function(socket){
 var THREE = require('three');
 //hacked Clock
 var clock = new THREE.Clock;
-var time = process.hrtime();
-setInterval(function(){
+var g_delta;
+var g_lastTick;
+//clock.start();
+//var time = clock.getElapsedTime ()//process.hrtime();
+var it = 0
 
-    world.renderPlayers();
-    var delta = clock.getDelta();
+function looper () {
+
+    //console.log('00000     '+clock.elapsedTime)
+
+    var delta = clock.getDelta(); //call order is important here 1.// side-effect update clock.elapsedTime
+  //  console.log(delta);
+    // call after getDelta() is important.
+    //console.log('11111     '+clock.elapsedTime)
+
+    world.renderPlayers(delta); // call order is important is here 2.
+
+ //   console.log('g_delta   '+g_delta+'  delta '+delta+ ' g_lasttick  '+g_lastTick+ '22222     '+clock.elapsedTime)
+    g_delta = delta;
+    g_lastTick = clock.elapsedTime;// copy primitive //call order is important here 3. // call after getDelta() is important. + call after render is important
+
+ //   console.log('delta ' + delta + ' lastTick ' + lastTick);
+
+ //   var players = world.players;
+
+  //     io.emit('updateWorld', [players,delta]) /// EMIT TO ALL  // IS IT SYNC?????????
+  //   world.resetMoveStates();
+    setImmediate(looper);
+
+};  // render world
 
 
-    var players = world.players;
-
-
-    //console.log(world.players)
-     io.emit('updateWorld', [players,delta]) /// EMIT TO ALL  // IS IT SYNC?????????
-    world.resetMoveStates();
-
-}    ,20);  // render world
+looper();
 
 
 
+setInterval(function sendUpdateToClient(){
+    var ptime =  process.hrtime(); // hack
+    var ps = (ptime[0]+  1e-9 * ptime[1])
 
 
 
-
-
+   /*     ;(function (p, g_t, ptime)
+         {
+                setTimeout(function () {
+                    io.emit('outer_UPD_world_CLI', [p, g_t, ptime ])
+                    }, 100);
+             }) (world.players, g_lastTick, ps); // IIFE
+  */
+  /*
+   world.players.forEach(function(p, i){
+       console.log('P'+i+ ' mixerTime '+  p.mixerTime)
+   });
+   */
+   io.emit('outer_UPD_world_CLI', [world.players,g_lastTick,ps])
+},15)
