@@ -47,7 +47,7 @@ app.use('/PointerLockControl',express.static(__dirname+'/PointerLockControl'));
 //    next();
 //})
 
-
+var counter = 0;
 
 io.on('connection', function(socket){
     console.log('Client connected: '+ socket.id);
@@ -149,6 +149,27 @@ io.on('connection', function(socket){
         //console.log(socket.id);
 
     });
+
+
+
+
+    socket.on('playerState', function (state){
+
+        counter += 1;
+
+        console.log('PLAYER STATE FIRED '+ JSON.stringify(process.hrtime()) +' counter '+ counter)
+
+        player.ts_client = state[0];
+        player.keyState = state[1];
+        player.mouseState = state[2];
+        player.mouse2D =state[3];
+        player.ts_server =state[4];
+        player.last_client_delta = state[5]; // never used. saved on client side for client reconciliation
+        //DO NOT UNCOMMENT -- update DUPLICATION player.position.set(state[6].x,state[6].y,state[6].z)
+        //DO NOT UNCOMMENT -- player.rotation.set(state[7].x,state[7].y,state[7].z)
+        player.needServerUpdate = true;
+
+    })
 
     socket.on('playerHit', function(id){
         console.log('playerHit got for' + id);
@@ -292,13 +313,15 @@ var it = 0
 function looper () {
 
     //console.log('00000     '+clock.elapsedTime)
+    counter = 0;
+   // console.log('LOOPER STATE FIRED '+ JSON.stringify(process.hrtime()) +' counter '+ counter)
 
     var delta = clock.getDelta(); //call order is important here 1.// side-effect update clock.elapsedTime
   //  console.log(delta);
     // call after getDelta() is important.
     //console.log('11111     '+clock.elapsedTime)
 
-    world.renderPlayers(delta); // call order is important is here 2.
+    world.renderPlayers(world.objects, delta); // call order is important is here 2.
 
  //   console.log('g_delta   '+g_delta+'  delta '+delta+ ' g_lasttick  '+g_lastTick+ '22222     '+clock.elapsedTime)
     g_delta = delta;
@@ -311,6 +334,7 @@ function looper () {
   //     io.emit('updateWorld', [players,delta]) /// EMIT TO ALL  // IS IT SYNC?????????
   //   world.resetMoveStates();
     setImmediate(looper);
+    //setTimeout(looper,0);
 
 };  // render world
 
@@ -337,5 +361,6 @@ setInterval(function sendUpdateToClient(){
        console.log('P'+i+ ' mixerTime '+  p.mixerTime)
    });
    */
+   // if(world.players[0]) console.log(JSON.stringify(world.players[0]))
    io.emit('outer_UPD_world_CLI', [world.players,g_lastTick,ps])
-},15)
+},20)
