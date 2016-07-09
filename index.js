@@ -1,3 +1,4 @@
+//var log = require('why-is-node-running') // should be your first require
 var express = require('express');
 var app = express();
 var server = require('http').createServer(app);
@@ -7,16 +8,15 @@ var favicon = require('serve-favicon');
 var THREE = require('three');
 var fs = require('fs');
 var world = require('./server_app/server_world');
-
+//var async = require('async');
 var serverRenderer = require('./server_app/serverRenderer');
+//var Worker = require("tiny-worker");
+//var Worker = require('pseudo-worker');
+//var activeHandles = require('active-handles');
 
-
-
-
-
-
-
+//console.log(process.env);
 app.use(logger('dev'));
+
 
 
 server.listen(3000, function(){
@@ -38,6 +38,7 @@ app.use('/Raycaster',express.static(__dirname+'/Raycaster'));
 app.use('/Helpers',express.static(__dirname+'/Helpers'));
 
 app.use('/server_app',express.static(__dirname+'/server_app'));
+app.use('/share',express.static(__dirname+'/share'));
 
 
 app.use('/PointerLockControl',express.static(__dirname+'/PointerLockControl'));
@@ -157,7 +158,10 @@ io.on('connection', function(socket){
 
         counter += 1;
 
-        console.log('PLAYER STATE FIRED '+ JSON.stringify(process.hrtime()) +' counter '+ counter)
+
+     //   console.log('PLAYER STATE FIRED '+ JSON.stringify(process.hrtime()) +' counter '+ counter+ ' socket '+ socket.id + ' ts_client '+state[0])
+      //  if(counter > 4) throw /*new Error*/console.log( 'counter > 4  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+
 
         player.ts_client = state[0];
         player.keyState = state[1];
@@ -167,14 +171,15 @@ io.on('connection', function(socket){
         player.last_client_delta = state[5]; // never used. saved on client side for client reconciliation
         //DO NOT UNCOMMENT -- update DUPLICATION player.position.set(state[6].x,state[6].y,state[6].z)
         //DO NOT UNCOMMENT -- player.rotation.set(state[7].x,state[7].y,state[7].z)
+        player.isCameraFollow = state[8]
         player.needServerUpdate = true;
 
     })
 
     socket.on('playerHit', function(id){
-        console.log('playerHit got for' + id);
+     //   console.log('playerHit got for' + id);
         var otherPlayer = world.playerForId(id);
-        console.log(otherPlayer)
+     //   console.log(otherPlayer)
         if(otherPlayer) otherPlayer.moveState.hitOnce = true; // danger -- remove player from raycast objects
 
     })
@@ -301,7 +306,7 @@ io.on('connection', function(socket){
 //    console.log(world.players)
 //}, 1000);
 
-var THREE = require('three');
+//var THREE = require('three');
 //hacked Clock
 var clock = new THREE.Clock;
 var g_delta;
@@ -310,7 +315,148 @@ var g_lastTick;
 //var time = clock.getElapsedTime ()//process.hrtime();
 var it = 0
 
+
+
+
+
+function blocker(time) {
+    var now = new Date().getTime()
+
+    while (new Date().getTime() < now + time) {
+//  console.log('blocking')
+    }
+}
+/*
+function foo(){
+    world.objects.forEach(function (playerItem){
+
+        playerItem.__dirtyPosition = true;
+        playerItem.__dirtyRotation = true;
+        playerItem.rotation.y += 0.1
+        console.log('rot ' +playerItem.rotation.y)
+    })
+
+
+    setTimeout(foo,100)
+
+
+
+}
+*/
+//foo()
+
+/*
+
+world.scene.addEventListener('update', function(){
+    console.log('worker update')
+  //  blocker(100)
+    looper();
+ //   setTimeout(function(){world.scene.simulate()},0);
+ //   setImmediate(function(){world.scene.simulate()})
+
+   // world.scene.simulate()
+})
+world.scene.simulate()
+*/
+//var agg_delta = 0 ;
+//world.scene.addEventListener('update', function(){
+   // setTimeout(function(){world.scene.simulate()},100)
+
+  //   function inloop () {
+        //console.log('call');
+    //    counter = 0;
+        // console.log('LOOPER STATE FIRED '+ JSON.stringify(process.hrtime()) +' counter '+ counter)
+
+      //  var delta = clock.getDelta(); //call order is important here 1.// side-effect update clock.elapsedTime
+        //  console.log(delta);
+        // call after getDelta() is important.
+        //console.log('11111     '+clock.elapsedTime)
+
+
+        // foo();
+        // agg_delta += delta
+
+
+     //   console.log('call ' + delta + ' agg_delta '+ agg_delta);
+
+
+
+
+        // if(world.players[0]) console.log( JSON.stringify(world.playerForId(world.players[0].playerId).quaternion))
+
+
+        //console.log('playerItem.quaternion: '+JSON.stringify(playerItem.quaternion)+ 'playerItem._physijs.rotation: '+JSON.stringify(playerItem._physijs.rotation))
+
+
+//        var is_done = world.renderPlayers(world.objects, 'delta?'); // call order is important is here 2.
+
+
+       // console.log(is_done)
+
+        //console.log('back')
+
+
+        //  if(world.players[0]) console.log( JSON.stringify(world.playerForId(world.players[0].playerId).quaternion))
+  //     var ret = world.scene.simulate(agg_delta/*delta*/);
+      //   console.log(ret);
+       //  if (ret) agg_delta =0
+     //   //   console.log('g_delta   '+g_delta+'  delta '+delta+ ' g_lasttick  '+g_lastTick+ '22222     '+clock.elapsedTime)
+    //    g_delta = delta;
+   //     g_lastTick = clock.elapsedTime;// copy primitive //call order is important here 3. // call after getDelta() is important. + call after render is important
+  //      setImmediate(inloop);
+ //        //process.nextTick(inloop);
+//    }
+
+//inloop()
+    //   console.log('delta ' + delta + ' lastTick '
+//})
+
+//world.scene.simulate(0);
+
+//console.log( 'scene ' )
+//world.scene.physijs.worker.onmessage= null;
+//console.log(world.scene.physijs.worker.onmessage)
+/*
+setInterval(function(){
+    counter = 0;
+  //  blocker(100);
+   // activeHandles.print();
+   // console.log(process._getActiveHandles());
+    log()
+    console.log('inteval!!')
+}, 0)
+*/
+/*
+var physics_framerate = 1000 / 60;
+function onStep() {
+    //box.rotation.z
+
+     setTimeout( world.scene.step.bind( scene, physics_framerate / 1000, undefined, onStep ), physics_framerate );
+}
+world.scene.step( physics_framerate / 1000, undefined, onStep );
+*/
+
+/*
+var isBrowser=new Function("try {return this===window;}catch(e){ return false;}");
+if(isBrowser()) {console.log("running under browser")} else{
+    (console.log("NOT running under browser"));
+}
+
+*/
+/*
+setInterval(function anon(){
+    console.log('call')
+    world.scene.simulate()},100);
+*/
+
 function looper () {
+ //   console.time('up')
+
+
+
+
+
+
 
     //console.log('00000     '+clock.elapsedTime)
     counter = 0;
@@ -321,19 +467,32 @@ function looper () {
     // call after getDelta() is important.
     //console.log('11111     '+clock.elapsedTime)
 
+    //console.log(delta);
+
+
+
+    world.scene.setFixedTimeStep(delta);
+    world.scene.simulate(delta);
+   // world.scene.updateMatrixWorld();
+  //  console.log(delta);
+
+ // console.log('looper');
+
     world.renderPlayers(world.objects, delta); // call order is important is here 2.
 
  //   console.log('g_delta   '+g_delta+'  delta '+delta+ ' g_lasttick  '+g_lastTick+ '22222     '+clock.elapsedTime)
     g_delta = delta;
     g_lastTick = clock.elapsedTime;// copy primitive //call order is important here 3. // call after getDelta() is important. + call after render is important
-
+//    activeHandles.print();
  //   console.log('delta ' + delta + ' lastTick ' + lastTick);
-
+   // blocker(10);
  //   var players = world.players;
-
+ //   log()
   //     io.emit('updateWorld', [players,delta]) /// EMIT TO ALL  // IS IT SYNC?????????
   //   world.resetMoveStates();
     setImmediate(looper);
+  //  process.nextTick(function(){looper()})
+     // setTimeout(looper,0);
     //setTimeout(looper,0);
 
 };  // render world
@@ -341,11 +500,46 @@ function looper () {
 
 looper();
 
+/*
+
+var phyClock = new THREE.Clock();
+
+world.scene.addEventListener( 'update', function() {
+
+    function phys() {
+        var phyDelta = phyClock.getDelta();
+        console.log('call delta ' + phyDelta);
+        world.scene.simulate()
+        // the scene's physics have finished updating
+    }
+    setTimeout(phys, 25)
+
+});
+
+world.scene.simulate(0);
+*/
+
+
+/*
+function phy() {
+
+    console.log('call '+(1 / 60000))
+    world.scene.simulate()
+    setTimeout(phy,0)
+}
+
+phy();
+*/
+
 
 
 setInterval(function sendUpdateToClient(){
     var ptime =  process.hrtime(); // hack
     var ps = (ptime[0]+  1e-9 * ptime[1])
+
+
+
+
 
 
 
@@ -361,6 +555,9 @@ setInterval(function sendUpdateToClient(){
        console.log('P'+i+ ' mixerTime '+  p.mixerTime)
    });
    */
+   // console.log(g_lastTick+" vs "+ ps)
    // if(world.players[0]) console.log(JSON.stringify(world.players[0]))
-   io.emit('outer_UPD_world_CLI', [world.players,g_lastTick,ps])
+ //   console.log('rotation!!!!')
+  //  if (world.players[0]) console.log(world.players[0].rotation)
+   io.emit('outer_UPD_world_CLI', {players: world.players, lastTick:'legacy danger code' /*g_lastTick*/,ps: ps})
 },20)

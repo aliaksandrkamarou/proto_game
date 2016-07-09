@@ -4,15 +4,23 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": " node index.js"
   },
   "author": "aliaksandr kamarou",
   "license": "MIT",
   "dependencies": {
+    "active-handles": "^1.1.0",
+    "async": "^2.0.0-rc.6",
+    "child-process-debug": "0.0.7",
     "express": "^4.13.4",
     "morgan": "^1.7.0",
+    "pseudo-worker": "^1.0.2",
     "serve-favicon": "^2.3.0",
     "socket.io": "^1.4.5",
-    "three": "^0.75.0"
+    "three": "^0.76.1",
+    "tiny-worker": "^1.1.4",
+    "why-is-node-running": "^1.2.2",
+    "xmlhttprequest": "^1.8.0"
   }
 }

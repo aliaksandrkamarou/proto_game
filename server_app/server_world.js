@@ -1,8 +1,60 @@
 'use strinct';
 var THREE = require('three');
 var fs = require('fs');
+var Player = require('../share/Player');
+var cameraControl = require('../share/cameraControl');
+var checkRayCast = require('../share/checkRayCast');
 
-var scene = new THREE.Scene();
+var checkKeyStates = require('../share/checkKeyStates');
+
+//var Worker = require('tiny-worker');
+var Worker = require('pseudo-worker');
+
+var Physijs = require('../lib/physi.js');
+
+Physijs.scripts.worker = 'lib/physijs_worker.js';
+Physijs.scripts.ammo = 'lib/ammo.js';
+
+//var OIMO = require('../lib/oimo');
+
+
+var updateOimoPhysics = require('../share/updateOimoPhysics')
+var initWorld = require('../share/initWorld');
+
+
+
+//var sce = new physijs.
+//var v = new Worker ('c:/proto_game/lib/worktest.js');
+//var scene = new physijs.Scene( 'lib/physijs-worker.js', {gravity:{x:0, y:-9.8, z:0}} );
+
+
+
+//var scene = new THREE.Scene();
+//var OIMOworld = new OIMO.World(1/60, 2, 8);
+
+
+//var scene = new Physijs.Scene({fixedTimeStep: 0 });
+//scene.setGravity(new THREE.Vector3( 0, -5,0 ));
+
+//console.log(scene.gravity);
+
+/*
+box = new Physijs.BoxMesh(
+    new THREE.CubeGeometry( 5, 5, 5 ),
+    new THREE.MeshBasicMaterial({ color: 0x888888 })
+);
+scene.add( box );
+*/
+
+
+var scene_world_bodys_meshs = initWorld() //new THREE.Scene()
+var scene = scene_world_bodys_meshs.scene;
+//var OIMOworld = scene_world_bodys_meshs.OIMOworld;
+//var OIMObodys = (scene_world_bodys_meshs.bodys);
+var OIMOmeshs = (scene_world_bodys_meshs.meshs);
+
+
+
 var players = [];
 var objects = [];
 
@@ -25,6 +77,7 @@ fs.readFile('c:/proto_game/client_app/droid.js', 'utf-8', function (err, content
 var content = fs.readFileSync('c:/proto_game/client_app/droid.js', 'utf-8');
 var jsonContent = JSON.parse(content);
 geometryTemplate = JSONloader.parse(jsonContent).geometry;
+//geometryTemplate.scale.set(.02,.02,.02);
 
 
 var innerWidth = 100;
@@ -41,7 +94,7 @@ var innerHeight = 100;
 
 //var clock = new THREE.Clock();
 
-
+/*
 function Player(mesh, id) {
 
     mesh.userData = this
@@ -52,30 +105,37 @@ function Player(mesh, id) {
 
 
     this.position = mesh.position; // link
-    this.position.set(0, .5, 0); // set
+    this.position.set(0, 25, 0); // set
 
 
-    this.rotation = new THREE.Euler();     // DO NOT LINK IT TO  mesh.rotation since scene.updateMatrixWorld() uses it somehow
+    this.rotation = mesh.rotation //  new THREE.Euler();     // DO NOT LINK IT TO  mesh.rotation since scene.updateMatrixWorld() uses it somehow
     this.rotation.set(0, 0, 0, 'XYZ'); // set
 
     this.quaternion = mesh.quaternion; //link
 
     this.scale = mesh.scale//link
-    this.scale.set(0.02, 0.02, 0.02); //set
+   // this.scale.set(0.02, 0.02, 0.02); //set
 
     this.camera = new THREE.PerspectiveCamera(); //to be updated from player's side
-    this.camera.position.set(4, 4, 7);
+    this.camera.position.set(200, 200, 350);
     this.camPos = this.camera.position
     // this.camera.aspect = 0.5;
     this.camera.lookAt(new THREE.Vector3(0, 0, 0));
     this.cameraJSON = this.camera.toJSON();
 
+    this.playerCameraDist = {
+        distance: 250,
+        x:0, // angle?
+        y:30,
+        z:0
+    };
+    this.isCameraFollow = false;
 
     //
     this.keyState = {};
     this.mouseState = {};
-    this.moveSpeed = 3.0;
-    this.turnSpeed = 1.5;
+    this.moveSpeed = 100;
+    this.turnSpeed = 1.0;
 
     this.moveState = {
 
@@ -124,16 +184,27 @@ function Player(mesh, id) {
 
     this.pending_inputs = [];
 
-    this.ts_client = undefined;
+    this.ts_client = 0;
     this.ts_server = undefined;
     this.last_client_delta = 0;
     this.needServerUpdate = false;
+
+    this.ts_interpol = undefined;
+
+    this.ts_render = undefined;
+
+
+
+    //interpolation
+    this.pending_server_hist =[];
+
+    this.local_timer = undefined;
 
 };
 //Player.prototype = Object.create(THREE.Mesh.prototype);
 //Player.prototype.constructor = Player;
 
-
+*/
 
 var addPlayer = function(id){
 
@@ -145,9 +216,26 @@ var addPlayer = function(id){
         shading: THREE.FlatShading
     });
 
+    var pMaterial = Physijs.createMaterial(
+        material,
+        0.1,
+        0.1
 
-    var playerMesh = new THREE.Mesh(geometryTemplate, material);
+    );
 
+  //  geometryTemplate.scale(.02,.02,.02);
+
+
+    //   var playerMesh = new physijs.Convex(geometryTemplate, material, {mass:1})
+//   var playerMesh = new THREE.Mesh(geometryTemplate, material);
+    var playerMesh = new Physijs.CapsuleMesh(geometryTemplate, pMaterial /*, 1*/);
+   // playerMesh.__dirtyPosition = true;
+
+
+
+    // You may also want to cancel the object's velocity
+    //playerMesh.setLinearVelocity(new THREE.Vector3(0, 0, 0));
+    //playerMesh.setAngularVelocity(new THREE.Vector3(0, 0, 0));
     var player = new Player(playerMesh, id);
    // player.prototype.mixer = playerMesh.mixer;
 
@@ -203,11 +291,59 @@ var addPlayer = function(id){
     // console.log('AAAAALAAARMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM')
    // console.log( player.mixerTime)
 
+/*
+    var hex  = 0xff0000;
+    var bbox = new THREE.BoundingBoxHelper( playerMesh, hex );
+    // bbox.box.setFromObject( test );
+    //  bbox.updateMatrix();
+    bbox.update();
+
+    var diff_mesh_bbox = playerMesh.position.clone().sub(bbox.position);
+    playerMesh.geometry.translate(diff_mesh_bbox.x,diff_mesh_bbox.y,diff_mesh_bbox.z)
+
+    //   console.log(JSON.stringify(playerMesh.position))
+    //   console.log(JSON.stringify(bbox.position))
+    //   console.log(JSON.stringify(bbox.box.center()));
+    //   console.log(JSON.stringify(playerMesh.userData.diff_mesh_bbox))
+
+    bbox.name='bbox';
+
+  //  var axisHelper = new THREE.AxisHelper( 5 );
+ //   bbox.add( axisHelper );
+*/
+
+    //  console.log(bbox);
+
+
+    scene.add(playerMesh);
+ //   scene.add( bbox );
+
+    objects.push(playerMesh);
+    players.push(player);
+
+    // scene.add (test);
+
+
+
+ //   var bbox_body = OIMOworld.add({type:'box', size:[bbox.scale.x,bbox.scale.y,bbox.scale.z], pos:[bbox.position.x,bbox.position.y,bbox.position.z], move:true, world:OIMOworld, name: 'bbox_body'});
+
+  //  OIMObodys.push(bbox_body);
+  //  OIMOmeshs.push(bbox);
+
+    //bbox.add(playerMesh);
+
+
+/*
+    var playerMesh_body = OIMOworld.add({type:'box', size:[bbox.scale.x,bbox.scale.y,bbox.scale.z], pos:[bbox.position.x,bbox.position.y,bbox.position.z], move:true, world:OIMOworld,name: 'playerMesh_body',density: 5 });
+
+    OIMObodys.push(playerMesh_body);
+    OIMOmeshs.push(playerMesh);
+*/
 
 
     //playerMesh.name = id;
-    scene.add(playerMesh);
-    objects.push(playerMesh);
+//    scene.add(playerMesh);
+//    objects.push(playerMesh);
 
 
 
@@ -222,13 +358,13 @@ var addPlayer = function(id){
  //   console.log('player cam ');
  //   console.log(player.camera);
 
-    players.push( player );   // side effect
+  //  players.push( player );   // side effect
 
 
 
-    console.log('player.position')
-    console.log(player.position);
-    console.log(playerMesh.position);
+    //console.log('player.position')
+    //console.log(player.position);
+    //console.log(playerMesh.position);
 
 
     return player;
@@ -324,10 +460,40 @@ var renderPlayers = function(objects, delta) {
 
 
 
+
+
+   // updateOimoPhysics(OIMOworld, OIMObodys, OIMOmeshs);
     objects.forEach(function (playerItem) {
        // console.log(playerItem.userData.needServerUpdate)
+       // console.log('sync upd')
+
+
+       // playerItem.setAngularFactor(new THREE.Vector3(0,0,0));
+        //playerItem.setAngularVelocity(new THREE.Vector3(0,0,0));
+      //  playerItem.setLinearFactor(new THREE.Vector3(.01,1,.01));
+
 
         if(playerItem.userData.needServerUpdate) {
+
+
+
+         //   console.log('delta async '+delta)
+
+
+
+            playerItem.__dirtyPosition = true; //physi.js
+            playerItem.__dirtyRotation = true;
+
+
+
+
+
+
+
+
+
+
+
            // console.log(playerItem.userData.ts_client +' ' + JSON.stringify(playerItem.userData));
             /**/
 
@@ -335,13 +501,6 @@ var renderPlayers = function(objects, delta) {
 
             checkKeyStates(playerItem, playerItem.userData.last_client_delta);
 
-
-            //playerItem.userData.camera.updateProjectionMatrix(); // onResize and on connect
-            //playerItem.userData.camera.updateMatrixWorld(); // update camera since it's not a child of scene //
-            playerItem.userData.camera.updateMatrixWorld();
-
-
-             playerItem.userData.cameraJSON = playerItem.userData.camera.toJSON();
 
             // playerItem.updateMatrix();  //// WRONG??? should be after checkKeyStates
 
@@ -365,7 +524,7 @@ var renderPlayers = function(objects, delta) {
             // playerItem.userData.actions.standTime = playerItem.actions.stand.time
 
 
-            checkRayCast(playerItem);
+            checkRayCast(playerItem, scene);
             //console.log(playerItem.intersected);
 
            // console.log('ts_clien: '+playerItem.ts_client+' ')
@@ -378,11 +537,19 @@ var renderPlayers = function(objects, delta) {
 
         }
 
+        cameraControl(playerItem);
+        //playerItem.userData.camera.updateProjectionMatrix(); //already done onResize and on connect
+        playerItem.userData.camera.updateMatrixWorld(); // update camera since it's not a child of scene //
+
+        playerItem.userData.cameraJSON = playerItem.userData.camera.toJSON();
+
 
     });
-    scene.updateMatrixWorld(); // updateMeshes
+ //   scene.simulate();
+    scene.updateMatrixWorld(); // updateMeshes RAYCASTER needs
 //    deltaTime = clock.getDelta();
        // socket.emit('updateWorld', players) //  надо ли переносить в checkKeyStates?? !!!!!!!!!!! Или вообще на месте обрабатывать в consumer'е
+
 }
 
 var resetMoveStates = function(){
@@ -398,17 +565,26 @@ var resetMoveStates = function(){
 }
 
 //setInterval(renderPlayers,300)
-
+/*
 var checkKeyStates = function(player , delta){
+    //console.log(' pre playerItem.quaternion: '+JSON.stringify(player.quaternion)+ 'playerItem._physijs.rotation: '+JSON.stringify(player._physijs.rotation))
 
-   // console.log(player.mixer.time + '  VS  ' + player.userData.mixerTime);
+
+   // player.userData.rotation.y-= delta * player.userData.turnSpeed
+    //player.rotation.y -= delta * player.userData.turnSpeed
+
+    //console.log(' new playerItem.quaternion: '+JSON.stringify(player.quaternion)+ 'playerItem._physijs.rotation: '+JSON.stringify(player._physijs.rotation))
+
+
+    // console.log(player.mixer.time + '  VS  ' + player.userData.mixerTime);
 // ROTATION !!!!!!!!! PLAYER.ROTATION IS NOT LINKED TO PLAYER.USERDATA.ROTATION -- kinda HACK
+  //  console.log(player.userData.rotation.y + ' VS '+ player.rotation.y + '  -----   '+ player.userData.quaternion.y+ ' VS '+ player.quaternion.y)
 
     if (player.userData.keyState[38] || player.userData.keyState[87]) {
         // up arrow or 'w' - move forward
         player.actions.run.play()
-        player.position.x -= delta * player.userData.moveSpeed * Math.cos(player.userData.rotation._y);  //DO NOT USE PLAYER.ROTATION ITS NOT LINKED!!!
-        player.position.z += delta * player.userData.moveSpeed * Math.sin(player.userData.rotation._y);
+        player.position.x -= delta * player.userData.moveSpeed * Math.cos(player.userData.rotation.y);  //DO NOT USE PLAYER.ROTATION ITS NOT LINKED!!!
+        player.position.z += delta * player.userData.moveSpeed * Math.sin(player.userData.rotation.y);
 
     } else {
         player.actions.run.stop()
@@ -420,8 +596,8 @@ var checkKeyStates = function(player , delta){
 
     if (player.userData.keyState[40] || player.userData.keyState[83]) {
         // down arrow or 's' - move backward
-        player.position.x += delta * player.userData.moveSpeed * Math.cos(player.userData.rotation._y);
-        player.position.z -= delta * player.userData.moveSpeed * Math.sin(player.userData.rotation._y);
+        player.position.x += delta * player.userData.moveSpeed * Math.cos(player.userData.rotation.y);
+        player.position.z -= delta * player.userData.moveSpeed * Math.sin(player.userData.rotation.y);
         //player.position.x += player.moveSpeed * Math.sin(player.rotation.y);
         //player.position.z += player.moveSpeed * Math.cos(player.rotation.y);
 
@@ -430,24 +606,35 @@ var checkKeyStates = function(player , delta){
     };
     if (player.userData.keyState[37] || player.userData.keyState[65]) {
         // left arrow or 'a' - rotate left
-        !(player.userData.keyState[40] || player.userData.keyState[83]) ? player.userData.rotation._y += delta * player.userData.turnSpeed : player.userData.rotation._y -= delta * player.userData.turnSpeed ; // switch for backward
 
-       player.quaternion.setFromEuler(player.userData.rotation) // this.matrixUpdate won't catch rotation. only quaternion is used
+        //ver1
+        player.userData.rotation.y+= delta * player.userData.turnSpeed
+      //  console.log('rot '+ player.userData.rotation._y +' vs '+ player.userData.rotation.y)
+        //console.log( player.rotation.__proto__)
+
+        //ver 2
+        //!(player.userData.keyState[40] || player.userData.keyState[83]) ? player.userData.rotation.y += delta * player.userData.turnSpeed : player.userData.rotation.y -= delta * player.userData.turnSpeed ; // switch for backward
+
+      // player.quaternion.setFromEuler(player.userData.rotation) // this.matrixUpdate won't catch rotation. only quaternion is used
         //updatePlayerData();
         //socket.emit('updatePosition', playerData);
     };
     if ((player.userData.keyState[39] || player.userData.keyState[68])) {
         // right arrow or 'd' - rotate right
-        !(player.userData.keyState[40] || player.userData.keyState[83]) ? player.userData.rotation._y -= delta * player.userData.turnSpeed : player.userData.rotation._y += delta * player.userData.turnSpeed ; // switch for backward
 
-        player.quaternion.setFromEuler(player.userData.rotation) // this.matrixUpdate won't catch rotation. only quaternion is used
+        //ver1
+        player.userData.rotation.y-= delta * player.userData.turnSpeed
+        //ver 2
+        //!(player.userData.keyState[40] || player.userData.keyState[83]) ? player.userData.rotation.y -= delta * player.userData.turnSpeed : player.userData.rotation.y += delta * player.userData.turnSpeed ; // switch for backward
+
+     //   player.quaternion.setFromEuler(player.userData.rotation) // this.matrixUpdate won't catch rotation. only quaternion is used
         //updatePlayerData();
         //socket.emit('updatePosition', playerData);
     };
     if (player.userData.keyState[81]) {
         // 'q' - strafe left
-        player.position.x += delta * player.userData.moveSpeed * Math.sin(player.userData.rotation._y);
-        player.position.z += delta * player.userData.moveSpeed * Math.cos(player.userData.rotation._y);
+        player.position.x += delta * player.userData.moveSpeed * Math.sin(player.userData.rotation.y);
+        player.position.z += delta * player.userData.moveSpeed * Math.cos(player.userData.rotation.y);
         //player.position.x -= player.moveSpeed * Math.cos(player.rotation.y);
         //player.position.z += player.moveSpeed * Math.sin(player.rotation.y);
         //updatePlayerData();
@@ -455,8 +642,8 @@ var checkKeyStates = function(player , delta){
     };
     if (player.userData.keyState[69]) {
         // 'e' - strafe right
-        player.position.x -= delta * player.userData.moveSpeed * Math.sin(player.userData.rotation._y);
-        player.position.z -= delta * player.userData.moveSpeed * Math.cos(player.userData.rotation._y);
+        player.position.x -= delta * player.userData.moveSpeed * Math.sin(player.userData.rotation.y);
+        player.position.z -= delta * player.userData.moveSpeed * Math.cos(player.userData.rotation.y);
         //player.position.x += player.moveSpeed * Math.cos(player.rotation.y);
         //player.position.z -= player.moveSpeed * Math.sin(player.rotation.y);
         //updatePlayerData();
@@ -467,6 +654,11 @@ var checkKeyStates = function(player , delta){
     (player.userData.keyState[70]) ? player.actions.wave.play() :  player.actions.wave.stop();
 
 
+
+
+   // console.log(JSON.stringify(player.userData.rotation) +'  vs  '+JSON.stringify(player.rotation)  )
+
+
     player.mixer.update(delta);
 
     //console.log(player.userData.mouseState[0] + '  '+ player.actions.attack.time + ' '+ player.userData.actions.attackTime);
@@ -475,8 +667,8 @@ var checkKeyStates = function(player , delta){
 };
 
 
-
-
+*/
+/*
 var checkRayCast = function(object){
     var player = object.userData;
     var mouse = object.userData.mouse2D;
@@ -519,7 +711,7 @@ var checkRayCast = function(object){
 //    console.log('proj matrix');
 //    console.log(camera.projectionMatrix);
   //  console.log('mouse  x:' + mouse.x +' y: ' + mouse.y );
-    //  console.log('RAY FROM '+object.userData.playerId+ ' INTERSECTS OBJECT ' +(INTERSECTED ? INTERSECTED.userData.playerId : INTERSECTED ))
+   //   console.log('RAY FROM '+object.userData.playerId+ ' INTERSECTS OBJECT ' +(INTERSECTED ? INTERSECTED.userData.playerId : INTERSECTED ))
    // console.log('Rotation '+ (INTERSECTED ? ('object rotation ' + JSON.stringify(INTERSECTED.rotation) + 'userData rotation ' + JSON.stringify(INTERSECTED.userData.rotation) ) : INTERSECTED ))
 
    // if(INTERSECTED) {console.log('RAY FROM '+object.userData.playerId+ ' INTERSECTS OBJECT ' + INTERSECTED.userData.playerId )} else (console.log(''));
@@ -528,9 +720,33 @@ var checkRayCast = function(object){
     //console.log()
 
 
-}
+};
+*/
+/*
+function cameraControl (player) {
+
+   if(!player.userData.isCameraFollow) return ;
+    var camera = player.userData.camera;
 
 
+
+    camera.position.x =  player.position.x + player.userData.playerCameraDist.distance *  (Math.cos( player.rotation.y ));
+    camera.position.z =  player.position.z  - player.userData.playerCameraDist.distance * Math.sin( player.rotation.y  );
+
+  //  console.log('roy y '+player.rotation.y + 'cos y ' + Math.cos( (player.rotation.y)  ) + 'sin y '+  Math.sin( player.rotation.y  ) )
+
+    //camera rotate y
+    //camera.position.x = player.position.x + player.camera.distance * Math.cos( (player.camera.y) * Math.PI / 360 );
+    camera.position.y = player.position.y + player.userData.playerCameraDist.distance * Math.sin( (player.userData.playerCameraDist.y) * Math.PI / 360 );
+
+
+
+    camera.lookAt(player.position);
+
+
+
+};
+*/
 
 
 
@@ -555,3 +771,5 @@ module.exports.resetMoveStates = resetMoveStates;
 module.exports.jsonContent = jsonContent;
 
 module.exports.objects = objects;
+
+module.exports.scene = scene;
