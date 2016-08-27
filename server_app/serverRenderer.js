@@ -33,7 +33,7 @@ fs.readFile('c:/proto_game/client_app/droid.js', 'utf-8', function (err, content
 
     droid.scale.set(.2, .2, .2);
 
-    console.log(droid);
+  //  console.log(droid);
 
 
 });

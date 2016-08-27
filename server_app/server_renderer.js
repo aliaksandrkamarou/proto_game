@@ -1,5 +1,7 @@
 var THREE =  require('three');
 
+
+/*
 var loader = new THREE.ObjectLoader();
 
 var scene = new THREE.Scene();
@@ -12,11 +14,11 @@ var mouse = new THREE.Vector2(.5,.5);
 console.log(loader.parse(camera.toJSON()));
 console.log('-----------------');
 console.log(camera);
-
+*/
 /**
  * create field
  */
-
+/*
 var planeGeometry = new THREE.PlaneGeometry(1000, 1000);
 var planeMaterial = new THREE.MeshLambertMaterial({
     //map: THREE.ImageUtils.loadTexture('bg.jpg'),
@@ -52,7 +54,7 @@ for (var i = 0; i < 100; i++) {
     objects.push(meshArray[i]);
 }
 
-
+*/
 
 
 // raycaster
@@ -77,12 +79,19 @@ function onDocumentMouseMoveRaycater( event ) {
 */
 //&& !(intersects[0].object instanceof THREE.AxisHelper)
 
-// CALL in RENDER Loop:
-function Raycaster (mouse, camera) {
 
+
+
+// CALL in RENDER Loop:
+function Raycaster (objects) {
+    objects.forEach(function(player){
+
+
+
+    })
 
     raycaster.setFromCamera(mouse, camera);
-    var intersects = raycaster.intersectObjects(scene.children);
+    var intersects = raycaster.intersectObjects(objects);
     if (intersects.length > 0) {
         if (INTERSECTED != intersects[0].object  ) {
             if (INTERSECTED) INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex);

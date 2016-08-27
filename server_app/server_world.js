@@ -20,8 +20,11 @@ Physijs.scripts.ammo = 'lib/ammo.js';
 
 var updateOimoPhysics = require('../share/updateOimoPhysics')
 var initWorld = require('../share/initWorld');
+var initGeoMat = require ('../share/initGeoMat');
 
+var addPlayer = require('../share/addPlayer');
 
+var isServerInterpolation = false//||true;
 
 //var sce = new physijs.
 //var v = new Worker ('c:/proto_game/lib/worktest.js');
@@ -57,11 +60,19 @@ var OIMOmeshs = (scene_world_bodys_meshs.meshs);
 
 var players = [];
 var objects = [];
+var postServerMessages = [];
+var serverSentTimes = new Array(200)
+serverSentTimes.fill(0);
 
 
-var geometryTemplate;
+var serverInterpolationTime = 2;
+
+var geometryTemplate, multiMaterialTemplate;
 var JSONloader = new THREE.JSONLoader();
+//var geoMatTemplate =  initGeoMat();
 
+//geometryTemplate = geoMatTemplate.geometryTemplate;
+//multiMaterialTemplate = geoMatTemplate.multiMaterialTemplate;
 /*
 fs.readFile('c:/proto_game/client_app/droid.js', 'utf-8', function (err, content) {
     if (err) console.log(err);
@@ -74,10 +85,24 @@ fs.readFile('c:/proto_game/client_app/droid.js', 'utf-8', function (err, content
 
 }); // может лучше тут синхронный вызов, т.к. это только один раз вроде при инициализации???
 */
-var content = fs.readFileSync('c:/proto_game/client_app/droid.js', 'utf-8');
+//var content = fs.readFileSync('c:/proto_game/client_app/droid.js', 'utf-8');
+//var jsonContent = JSON.parse(content);
+//geometryTemplate = JSONloader.parse(jsonContent).geometry;
+
+
+var content = fs.readFileSync('c:/proto_game/models/Y_Bot/Y_Bot_v2.json', 'utf-8');
 var jsonContent = JSON.parse(content);
-geometryTemplate = JSONloader.parse(jsonContent).geometry;
+var templates = JSONloader.parse(jsonContent);
+geometryTemplate = templates.geometry;
+multiMaterialTemplate = templates.materials;
+multiMaterialTemplate.forEach(function (material) {
+    material.skinning = true;
+});
+
 //geometryTemplate.scale.set(.02,.02,.02);
+//geometryTemplate.rotateY( Math.PI );
+//geometry.updateMatrix();
+//geometryTemplate.verticesNeedUpdate = true;
 
 
 var innerWidth = 100;
@@ -95,118 +120,7 @@ var innerHeight = 100;
 //var clock = new THREE.Clock();
 
 /*
-function Player(mesh, id) {
-
-    mesh.userData = this
-
-
-    this.playerId = id; // const!!!!!
-    mesh.name = mesh.playerId = this.playerId;
-
-
-    this.position = mesh.position; // link
-    this.position.set(0, 25, 0); // set
-
-
-    this.rotation = mesh.rotation //  new THREE.Euler();     // DO NOT LINK IT TO  mesh.rotation since scene.updateMatrixWorld() uses it somehow
-    this.rotation.set(0, 0, 0, 'XYZ'); // set
-
-    this.quaternion = mesh.quaternion; //link
-
-    this.scale = mesh.scale//link
-   // this.scale.set(0.02, 0.02, 0.02); //set
-
-    this.camera = new THREE.PerspectiveCamera(); //to be updated from player's side
-    this.camera.position.set(200, 200, 350);
-    this.camPos = this.camera.position
-    // this.camera.aspect = 0.5;
-    this.camera.lookAt(new THREE.Vector3(0, 0, 0));
-    this.cameraJSON = this.camera.toJSON();
-
-    this.playerCameraDist = {
-        distance: 250,
-        x:0, // angle?
-        y:30,
-        z:0
-    };
-    this.isCameraFollow = false;
-
-    //
-    this.keyState = {};
-    this.mouseState = {};
-    this.moveSpeed = 100;
-    this.turnSpeed = 1.0;
-
-    this.moveState = {
-
-        hitOnce: false
-    };
-
-    this.mouse2D = new THREE.Vector2();
-
-
-    this.raycaster = new THREE.Raycaster();
-    this.raycaster.linePrecision = 0;
-
-
-    mesh.mixer = new THREE.AnimationMixer(mesh);
-
-
-    mesh.actions = {
-        stand: mesh.mixer.clipAction(mesh.geometry.animations[0]),
-        run: mesh.mixer.clipAction(mesh.geometry.animations[1]),
-        attack: mesh.mixer.clipAction(mesh.geometry.animations[2]),
-        painOne: mesh.mixer.clipAction(mesh.geometry.animations[3]),
-        wave: mesh.mixer.clipAction(mesh.geometry.animations[10])
-
-    };
-
-    mesh.actions.stand.play();
-
-
-
-
-
-    // this.actions = {};
-    this.actions = {
-        standTime: mesh.actions.stand.time,
-        runTime: mesh.actions.run.time,
-        attackTime: mesh.actions.attack.time,
-        painOneTime: mesh.actions.painOne.time,
-        waveTime: mesh.actions.wave.time
-
-    };
-
-    this.mixerTime = undefined; // sockets BUG?
-
-
-    this.intersected_scene_id = undefined;
-
-    this.pending_inputs = [];
-
-    this.ts_client = 0;
-    this.ts_server = undefined;
-    this.last_client_delta = 0;
-    this.needServerUpdate = false;
-
-    this.ts_interpol = undefined;
-
-    this.ts_render = undefined;
-
-
-
-    //interpolation
-    this.pending_server_hist =[];
-
-    this.local_timer = undefined;
-
-};
-//Player.prototype = Object.create(THREE.Mesh.prototype);
-//Player.prototype.constructor = Player;
-
-*/
-
-var addPlayer = function(id){
+var addPlayer = function(data){
 
 
     var material = new THREE.MeshPhongMaterial({
@@ -228,7 +142,7 @@ var addPlayer = function(id){
 
     //   var playerMesh = new physijs.Convex(geometryTemplate, material, {mass:1})
 //   var playerMesh = new THREE.Mesh(geometryTemplate, material);
-    var playerMesh = new Physijs.CapsuleMesh(geometryTemplate, pMaterial /*, 1*/);
+    var playerMesh = new Physijs.CapsuleMesh(geometryTemplate, pMaterial );
    // playerMesh.__dirtyPosition = true;
 
 
@@ -236,7 +150,7 @@ var addPlayer = function(id){
     // You may also want to cancel the object's velocity
     //playerMesh.setLinearVelocity(new THREE.Vector3(0, 0, 0));
     //playerMesh.setAngularVelocity(new THREE.Vector3(0, 0, 0));
-    var player = new Player(playerMesh, id);
+    var player = new Player(playerMesh, data.playerId);
    // player.prototype.mixer = playerMesh.mixer;
 
     Object.defineProperty(player, 'mixerTime', {
@@ -288,31 +202,6 @@ var addPlayer = function(id){
     });
 
 
-    // console.log('AAAAALAAARMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM')
-   // console.log( player.mixerTime)
-
-/*
-    var hex  = 0xff0000;
-    var bbox = new THREE.BoundingBoxHelper( playerMesh, hex );
-    // bbox.box.setFromObject( test );
-    //  bbox.updateMatrix();
-    bbox.update();
-
-    var diff_mesh_bbox = playerMesh.position.clone().sub(bbox.position);
-    playerMesh.geometry.translate(diff_mesh_bbox.x,diff_mesh_bbox.y,diff_mesh_bbox.z)
-
-    //   console.log(JSON.stringify(playerMesh.position))
-    //   console.log(JSON.stringify(bbox.position))
-    //   console.log(JSON.stringify(bbox.box.center()));
-    //   console.log(JSON.stringify(playerMesh.userData.diff_mesh_bbox))
-
-    bbox.name='bbox';
-
-  //  var axisHelper = new THREE.AxisHelper( 5 );
- //   bbox.add( axisHelper );
-*/
-
-    //  console.log(bbox);
 
 
     scene.add(playerMesh);
@@ -325,54 +214,13 @@ var addPlayer = function(id){
 
 
 
- //   var bbox_body = OIMOworld.add({type:'box', size:[bbox.scale.x,bbox.scale.y,bbox.scale.z], pos:[bbox.position.x,bbox.position.y,bbox.position.z], move:true, world:OIMOworld, name: 'bbox_body'});
-
-  //  OIMObodys.push(bbox_body);
-  //  OIMOmeshs.push(bbox);
-
-    //bbox.add(playerMesh);
-
-
-/*
-    var playerMesh_body = OIMOworld.add({type:'box', size:[bbox.scale.x,bbox.scale.y,bbox.scale.z], pos:[bbox.position.x,bbox.position.y,bbox.position.z], move:true, world:OIMOworld,name: 'playerMesh_body',density: 5 });
-
-    OIMObodys.push(playerMesh_body);
-    OIMOmeshs.push(playerMesh);
-*/
-
-
-    //playerMesh.name = id;
-//    scene.add(playerMesh);
-//    objects.push(playerMesh);
-
-
-
-
-
-
-    //player.playerId = id
-
-
-
-   // console.log('player '+ player.playerId +' mesh ' + playerMesh.position.y );
- //   console.log('player cam ');
- //   console.log(player.camera);
-
-  //  players.push( player );   // side effect
-
-
-
-    //console.log('player.position')
-    //console.log(player.position);
-    //console.log(playerMesh.position);
-
 
     return player;
 
 };
 
 
-
+*/
 
 
 
@@ -400,6 +248,14 @@ var removePlayer = function(player){
     if (indexOBJ > -1) {
         objects.splice(indexOBJ, 1);
     }
+
+
+
+    postServerMessages.some(function(el , idx, arr){
+        if (el.playerId == player.playerId){
+            arr.splice(idx, 1);
+        }
+    });
 
 
 
@@ -456,16 +312,312 @@ function objectForPID(id){
 
 
 
-var renderPlayers = function(objects, delta) {
+
+
+var renderPlayers = function(objects, delta, elapsedTimeAfterGetDelta) {
 
 
 
+    var ptime =  process.hrtime(); // hack
+    var currentTime = (ptime[0]+  1e-9 * ptime[1])
+ //   console.log(currentTime +' vs '+serverSentTimes[0])
 
 
    // updateOimoPhysics(OIMOworld, OIMObodys, OIMOmeshs);
     objects.forEach(function (playerItem) {
+      //  console.log('hello!!!!!!!!!!')
+
+        var innerDelta = delta;
+
+        playerItem.__dirtyPosition = true; //physi.js
+        playerItem.__dirtyRotation = true;
+
+       // if (playerItem.states.length > 1) {throw (err)}
+
+     //   if (isServerInterpolation ) {
+
+            if (isServerInterpolation && !playerItem.isTimeDelayBufferReady) {
+
+                while (playerItem.inputStates.length > 0/*true*/) {
+
+
+
+                    var serverLastSentTime = playerItem.inputStates[0][9]
+                    console.log(serverLastSentTime + ' VS ' + serverSentTimes[0])
+
+                    if (serverLastSentTime < serverSentTimes[0]) {
+
+                        playerItem.inputStates.shift(); // next iterator
+                        console.log('old')
+
+                    } else if (serverLastSentTime == serverSentTimes[0]) {
+                        console.log('exact');
+                        /*
+                         playerItem.userData.ts_client = state[0];
+                         playerItem.userData.keyState = state[1];
+                         playerItem.userData.mouseState = state[2];
+                         playerItem.userData.mouse2D = state[3];
+                         playerItem.userData.ts_server = state[4];    // serverLastUpdate
+                         playerItem.userData.last_client_delta = state[5];
+                         //DO NOT UNCOMMENT -- update DUPLICATION player.position.set(state[6].x,state[6].y,state[6].z)
+                         //DO NOT UNCOMMENT -- player.rotation.set(state[7].x,state[7].y,state[7].z)
+                         playerItem.userData.isCameraFollow = state[8];
+                         //playerItem.deltaBuffer =
+                         */
+
+                        playerItem.isTimeDelayBufferReady = true;
+
+                        playerItem.userData.needServerUpdate = true;
+
+                        //arr.splice(i, 1);
+
+                        break; // exit loop
+
+
+                    } else { // too young input. need to wait
+                        console.log('wait');
+                        break; // exit loop;
+                    }
+
+                }
+            }
+     /*
+                playerItem.inputStates.some(function (state, i, arr) {
+
+                    console.log(state[9] + ' VS ' + serverSentTimes[0])
+
+                    if (state[9] < serverSentTimes[0]) { //too old input
+                        console.log('old');
+                        arr.splice(i, 1)
+                    } else if (state[9] == serverSentTimes[0]) {  // exact what we need
+                        console.log('exact');
+       */                /*
+                        playerItem.userData.ts_client = state[0];
+                        playerItem.userData.keyState = state[1];
+                        playerItem.userData.mouseState = state[2];
+                        playerItem.userData.mouse2D = state[3];
+                        playerItem.userData.ts_server = state[4];    // serverLastUpdate
+                        playerItem.userData.last_client_delta = state[5];
+                        //DO NOT UNCOMMENT -- update DUPLICATION player.position.set(state[6].x,state[6].y,state[6].z)
+                        //DO NOT UNCOMMENT -- player.rotation.set(state[7].x,state[7].y,state[7].z)
+                        playerItem.userData.isCameraFollow = state[8];
+                        //playerItem.deltaBuffer =
+                        */
+/*
+                        playerItem.isTimeDelayBufferReady = true;
+
+                        playerItem.userData.needServerUpdate = true;
+
+                        //arr.splice(i, 1);
+
+                        return true; // exit loop
+
+
+                    } else { // too young input. need to wait
+                        console.log('wait');
+                        return true; // exit loop;
+                    }
+
+
+
+
+                });
+            };
+            console.log(playerItem.isTimeDelayBufferReady)
+*/
+            if (playerItem.isTimeDelayBufferReady || !isServerInterpolation) {
+
+                console.log('playerItem.inputStates.length' + playerItem.inputStates.length);
+
+
+                while (playerItem.inputStates.length > 0){
+                    var state = playerItem.inputStates[0]
+               //     console.log('!!!pre State '+ state[0] + ' keyState '+ JSON.stringify(state[1]) + ' ratation '+ JSON.stringify(playerItem.userData.rotation))
+                 //   if (state[1][68]){ console.log ('debug')};
+
+                    playerItem.userData.ts_client = state[0];
+                    playerItem.userData.keyState = state[1];
+                    playerItem.userData.mouseState = state[2];
+                    playerItem.userData.mouse2D = state[3];
+                    playerItem.userData.ts_server = state[4];    // serverLastUpdate
+                    playerItem.userData.last_client_delta = state[5];
+                    //DO NOT UNCOMMENT -- update DUPLICATION player.position.set(state[6].x,state[6].y,state[6].z)
+                    //DO NOT UNCOMMENT -- player.rotation.set(state[7].x,state[7].y,state[7].z)
+                    playerItem.userData.isCameraFollow = state[8];
+
+                    playerItem.userData.numberSteps = state[11];
+                    playerItem.userData.timeReminder = state[12];
+
+                    console.log('numberSteps ' + state[11] + ' vs delta ' + state[5] )
+
+
+                   // if
+
+                    if (state[11] == 0/*playerItem.userData.last_client_delta < innerDelta*/){
+                    //    console.log('playerItem.userData.last_client_delta < innerDelta')
+
+                        //innerDelta -= playerItem.userData.last_client_delta;
+
+                        checkKeyStates(playerItem,playerItem.userData.last_client_delta )
+                        cameraControl(playerItem);
+                        //playerItem.userData.camera.updateProjectionMatrix(); //already done onResize and on connect
+                        playerItem.userData.camera.updateMatrixWorld(); // update camera since it's not a child of scene //
+                        playerItem.userData.cameraJSON = playerItem.userData.camera.toJSON();
+
+                        console.log('ts_client '+ playerItem.userData.ts_client + ' rotation '+ JSON.stringify(playerItem.userData.rotation) + ' position '+ JSON.stringify(playerItem.userData.position)+ ' innerDelta '+ innerDelta +' keyState '+ JSON.stringify(playerItem.userData.keyState))
+
+                        postServerMessages.some(function (elem, idx, arr) {
+
+                            if (elem.playerId == playerItem.userData.playerId) {
+                                arr[idx] = JSON.parse(JSON.stringify(playerItem.userData));
+
+                                //el.test = 'test ok';
+                                // console.log(arr.length)
+                                return true;
+                            }
+
+                        });
+
+
+                        //arr.splice(idx,1);
+                        playerItem.inputStates.shift();
+                    } else if (state[11] > 0){
+
+
+
+
+                        console.log(' steps to go '+ state[11])
+                        state[11] -= 1 ; //decrease remained physics update count
+
+                        var d = Math.min(state[5],delta) //delta is a step here
+                        state[5] -= d; // decrease remained animation update time
+                            //  playerItem.userData.last_client_delta -= innerDelta;
+                            //state[5] -= innerDelta;
+
+
+
+                            checkKeyStates(playerItem, d);
+
+                            break; // exit loop
+
+                    }
+
+                }
+
+
+/*
+                playerItem.inputStates.some(function (state, idx, arr) {
+                   // console.log('ts_client ' + state[0]);
+
+                    console.log('!!!pre State '+ state[0] + ' keyState '+ JSON.stringify(state[1]) + ' ratation '+ JSON.stringify(playerItem.userData.rotation))
+                    if (state[1][68]){
+                        console.log ('debug')};
+
+                    playerItem.userData.ts_client = state[0];
+                    playerItem.userData.keyState = state[1];
+                    playerItem.userData.mouseState = state[2];
+                    playerItem.userData.mouse2D = state[3];
+                    playerItem.userData.ts_server = state[4];    // serverLastUpdate
+                    playerItem.userData.last_client_delta = state[5];
+                    //DO NOT UNCOMMENT -- update DUPLICATION player.position.set(state[6].x,state[6].y,state[6].z)
+                    //DO NOT UNCOMMENT -- player.rotation.set(state[7].x,state[7].y,state[7].z)
+                    playerItem.userData.isCameraFollow = state[8];
+
+                 //   playerItem.phyDelayReminder += last_client_delta; // add to time to be processed
+
+                    if (playerItem.userData.last_client_delta < innerDelta){
+                        console.log('playerItem.userData.last_client_delta < innerDelta')
+
+                        innerDelta -= playerItem.userData.last_client_delta;
+
+                        checkKeyStates(playerItem,playerItem.userData.last_client_delta )
+                        cameraControl(playerItem);
+                        //playerItem.userData.camera.updateProjectionMatrix(); //already done onResize and on connect
+                        playerItem.userData.camera.updateMatrixWorld(); // update camera since it's not a child of scene //
+                        playerItem.userData.cameraJSON = playerItem.userData.camera.toJSON();
+
+                       console.log('ts_client '+ playerItem.userData.ts_client + ' rotation '+ JSON.stringify(playerItem.userData.rotation) + ' innerDelta '+ innerDelta +' keyState '+ JSON.stringify(playerItem.userData.keyState))
+
+                        postServerMessages.some(function (elem, idx, arr) {
+
+                            if (elem.playerId == playerItem.userData.playerId) {
+                                arr[idx] = JSON.parse(JSON.stringify(playerItem.userData));
+
+                                //el.test = 'test ok';
+                                // console.log(arr.length)
+                                return true;
+                            }
+
+                        })
+
+
+                        arr.splice(idx,1);
+                    } else {
+
+                        console.log('ELSE')
+                      //  playerItem.userData.last_client_delta -= innerDelta;
+                        arr[idx][5] -= innerDelta;
+
+                        checkKeyStates(playerItem, innerDelta);
+
+                        return true // exit loop
+                    }
+
+
+
+
+
+                })
+
+*/
+            }
+            //   checkKeyStates(playerItem, playerItem.userData.last_client_delta); //
+
+
+
+
+
+
+
+
+
+          //  playerItem.timeDelayReminder =
+
+            //playerItem.userData.last_client_delta
+
+//       }
+      //  playerItem.states.forEach(function(player, i arr) {})
+
+/*
+            player.ts_client = state[0];
+            player.keyState = state[1];
+            player.mouseState = state[2];
+            player.mouse2D = state[3];
+            player.ts_server = state[4];
+            player.last_client_delta = state[5]; // never used. saved on client side for client reconciliation
+            //DO NOT UNCOMMENT -- update DUPLICATION player.position.set(state[6].x,state[6].y,state[6].z)
+            //DO NOT UNCOMMENT -- player.rotation.set(state[7].x,state[7].y,state[7].z)
+            player.isCameraFollow = state[8]
+
+  */ //         player.needServerUpdate = true;
+       // });
+
+
        // console.log(playerItem.userData.needServerUpdate)
        // console.log('sync upd')
+     //   scene.setFixedTimeStep(0.05);
+      //  playerItem.setLinearVelocity({x:1,y:0,z:1});
+       // scene.simulate(0.15, 3);
+        //scene.simulate(0.6/20, 10);
+       // scene.simulate(0.05, 3);
+
+
+
+        //console.log(playerItem.position)
+       // console.log((0.3/20)%(1/20)+(0.6/20)%(1/20)+(0.1000001/20)%(1/20))
+       // console.log(1/20)
+
+       // throw(err)
 
 
        // playerItem.setAngularFactor(new THREE.Vector3(0,0,0));
@@ -473,33 +625,86 @@ var renderPlayers = function(objects, delta) {
       //  playerItem.setLinearFactor(new THREE.Vector3(.01,1,.01));
 
 
-        if(playerItem.userData.needServerUpdate) {
-
-
-
-         //   console.log('delta async '+delta)
-
-
-
-            playerItem.__dirtyPosition = true; //physi.js
-            playerItem.__dirtyRotation = true;
+      //  if(playerItem.userData.needServerUpdate) {
 
 
 
 
 
+            // console.log(playerItem.userData.states.length)
+
+            /*
+             while (playerItem.userData.states[0]) {
+
+             // console.log(playerItem.userData.states.length)
+
+
+             var state = playerItem.userData.states[0];
+             var player = playerItem.userData;
+             player.ts_client = state[0];
+             player.keyState = state[1];
+             player.mouseState = state[2];
+             player.mouse2D = state[3];
+             player.ts_server = state[4];
+             player.last_client_delta = state[5];
+             player.isCameraFollow = state[8]
+             //   player.needServerUpdate = true;
+
+
+
+             // var ddelta = playerItem.userData.last_client_delta - delta //- playerItem.userData.delta_dept
+
+             if ((state[5] - delta)>0) {
 
 
 
 
+             checkKeyStates(playerItem, delta);
+             console.log('true cldelta' + state[5] + ' delta '+ delta)
+             state[5] -= delta;  // decrease delta to be processed
+             //  playerItem.userData.delta_dept = 0;
 
 
-           // console.log(playerItem.userData.ts_client +' ' + JSON.stringify(playerItem.userData));
+             break;
+
+
+             } else if ((state[5] - delta)<=0) {
+
+             console.log('FALSE cldelta' + state[5] + ' delta '+ delta)
+
+             checkKeyStates(playerItem, state[5]);
+             playerItem.userData.states.shift();
+             delta -= playerItem.userData.last_client_delta
+             //  playerItem.userData.delta_dept = (- ddelta);  // dept for non-processed client delta ;
+             //  console.log(delta_dept);
+
+             //  console.log('false')
+
+
+             }
+
+             }
+
+
+             */
+
+
+            // console.log(playerItem.userData.ts_client +' ' + JSON.stringify(playerItem.userData));
             /**/
+            //console.log('test');
+            //  console.log(playerItem.userData.ts_client +' pre '+ JSON.stringify(playerItem.rotation) + ' delta '+ playerItem.userData.last_client_delta + ' ts '+ playerItem.userData.ts)
+
+            //checkKeyStates(playerItem, playerItem.userData.last_client_delta);
+
+            //   console.log(playerItem.userData.ts_client +' after '+ JSON.stringify(playerItem.rotation) + ' delta '+ playerItem.userData.last_client_delta )
+
+
+            ///
 
 
 
-            checkKeyStates(playerItem, playerItem.userData.last_client_delta);
+           // playerItem.
+
 
 
             // playerItem.updateMatrix();  //// WRONG??? should be after checkKeyStates
@@ -514,7 +719,7 @@ var renderPlayers = function(objects, delta) {
             //    console.log( playerItem.userData.cameraJSON === playerForId(playerItem.name).cameraJSON);
 
 
-           // playerItem.mixer.update(playerItem.userData.last_client_delta);
+            // playerItem.mixer.update(playerItem.userData.last_client_delta);
 
             // console.log('mixAfter '+playerItem.mixer.time + ' delta ' + delta + ' time after ' + goalTime + ' for '+ playerItem.playerId )
             //  console.log('player '+ playerItem.name +' mixer time '+ playerItem.mixer.time);
@@ -524,29 +729,52 @@ var renderPlayers = function(objects, delta) {
             // playerItem.userData.actions.standTime = playerItem.actions.stand.time
 
 
-            checkRayCast(playerItem, scene);
+            // checkRayCast(playerItem, scene);
             //console.log(playerItem.intersected);
 
-           // console.log('ts_clien: '+playerItem.ts_client+' ')
+            // console.log('ts_clien: '+playerItem.ts_client+' ')
 
 
+
+
+            //   console.log('AFTER '+playerItem.userData.ts_client +' ' + JSON.stringify(playerItem.userData));
+/*
+        if (!isServerInterpolation) {
+            checkKeyStates(playerItem, innerDelta);
+
+
+            cameraControl(playerItem);
+            //playerItem.userData.camera.updateProjectionMatrix(); //already done onResize and on connect
+            playerItem.userData.camera.updateMatrixWorld(); // update camera since it's not a child of scene //
+
+            playerItem.userData.cameraJSON = playerItem.userData.camera.toJSON();
 
             playerItem.userData.needServerUpdate = false;
 
-         //   console.log('AFTER '+playerItem.userData.ts_client +' ' + JSON.stringify(playerItem.userData));
+          //  console.log(JSON.stringify(playerItem.position))
 
+
+            postServerMessages.some(function (elem, idx, arr) {
+
+                if (elem.playerId == playerItem.userData.playerId) {
+                    arr[idx] = JSON.parse(JSON.stringify(playerItem.userData));
+
+                    //el.test = 'test ok';
+                    // console.log(arr.length)
+                    return true;
+                }
+
+            })
+            // }
         }
-
-        cameraControl(playerItem);
-        //playerItem.userData.camera.updateProjectionMatrix(); //already done onResize and on connect
-        playerItem.userData.camera.updateMatrixWorld(); // update camera since it's not a child of scene //
-
-        playerItem.userData.cameraJSON = playerItem.userData.camera.toJSON();
-
-
+*/
     });
  //   scene.simulate();
     scene.updateMatrixWorld(); // updateMeshes RAYCASTER needs
+
+   // serverSentTimes.shift(); // length filled during initialization
+
+   // console.log(serverSentTimes.length);
 //    deltaTime = clock.getDelta();
        // socket.emit('updateWorld', players) //  надо ли переносить в checkKeyStates?? !!!!!!!!!!! Или вообще на месте обрабатывать в consumer'е
 
@@ -754,10 +982,14 @@ function cameraControl (player) {
 
 
 module.exports.players = players;
+module.exports.postServerMessages = postServerMessages;
+
+
 module.exports.addPlayer = addPlayer;
 module.exports.removePlayer = removePlayer;
 //module.exports.updatePlayerData = updatePlayerData;
 module.exports.playerForId = playerForId;
+module.exports.objectForPID = objectForPID;
 
 //module.exports.onKeyDown = onKeyDown;
 //module.exports.onKeyUp = onKeyUp;
@@ -773,3 +1005,12 @@ module.exports.jsonContent = jsonContent;
 module.exports.objects = objects;
 
 module.exports.scene = scene;
+
+module.exports.geometryTemplate = geometryTemplate;
+module.exports.multiMaterialTemplate = multiMaterialTemplate;
+
+
+
+module.exports.serverSentTimes = serverSentTimes
+
+module.exports.isServerInterpolation = isServerInterpolation;
