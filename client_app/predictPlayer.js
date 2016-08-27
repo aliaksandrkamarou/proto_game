@@ -13,16 +13,32 @@ var predictPlayer = function  (objects,delta) {
         // console.log('CALL!!!!');
 
 
+
+
+        playerItem.__dirtyPosition = true; //physi.js
+        playerItem.__dirtyRotation = true;
+
+       /* if
+        (playerItem.userData.keyState[38] || playerItem.userData.keyState[87]) {
+            playerItem.position.x += delta * playerItem.userData.turnSpeed * playerItem.userData.r * Math.sin(playerItem.userData.rotation.y);  //DO NOT USE PLAYER.ROTATION ITS NOT LINKED!!!
+            playerItem.position.z += delta *  playerItem.userData.turnSpeed * playerItem.userData.r  * Math.cos(playerItem.userData.rotation.y);
+        }
+*/
+
         checkKeyStates(playerItem, delta);
+        cameraControl(playerItem);
 
 
        // playerItem.userData.camera.updateMatrixWorld(); // TODO:  get/set
 
+      //  console.log(JSON.stringify(playerItem.userData.rotation) +'  vs  '+JSON.stringify(playerItem.rotation)  )
 
-        if (isAnim) playerItem.mixer.update(delta);  // isAnim GLOBAL
+
+        //if (isAnim) // isAnim GLOBAL
+      //   playerItem.mixer.update(delta);
 
 
-      //  checkRayCast(playerItem);
+        checkRayCast(playerItem, scene);
         //console.log(playerItem.intersected);
 
 
@@ -39,7 +55,88 @@ var predictPlayer = function  (objects,delta) {
     });
 
 }
+/*
+var checkKeyStates = function (player, delta) {
 
+    if (player.userData.keyState[38] || player.userData.keyState[87]) {
+        // up arrow or 'w' - move forward
+        player.actions.run.play()
+        player.position.x -= delta * player.userData.moveSpeed * Math.cos(player.userData.rotation.y);  //DO NOT USE PLAYER.ROTATION ITS NOT LINKED!!!
+        player.position.z += delta * player.userData.moveSpeed * Math.sin(player.userData.rotation.y);
+
+    } else {
+        player.actions.run.stop()
+    }
+    ;
+
+
+    if (player.userData.keyState[40] || player.userData.keyState[83]) {
+        // down arrow or 's' - move backward
+        player.position.x += delta * player.userData.moveSpeed * Math.cos(player.userData.rotation.y);
+        player.position.z -= delta * player.userData.moveSpeed * Math.sin(player.userData.rotation.y);
+
+    }
+    ;
+    if (player.userData.keyState[37] || player.userData.keyState[65]) {
+        // left arrow or 'a' - rotate left
+
+        //ver1
+        player.userData.rotation.y += delta * player.userData.turnSpeed
+        //  console.log('rot '+ player.userData.rotation._y +' vs '+ player.userData.rotation.y)
+        //console.log( player.rotation.__proto__)
+
+        //ver 2
+        //!(player.userData.keyState[40] || player.userData.keyState[83]) ? player.userData.rotation.y += delta * player.userData.turnSpeed : player.userData.rotation.y -= delta * player.userData.turnSpeed ; // switch for backward
+
+        // player.quaternion.setFromEuler(player.userData.rotation) // this.matrixUpdate won't catch rotation. only quaternion is used
+        //updatePlayerData();
+        //socket.emit('updatePosition', playerData);
+    }
+    ;
+    if ((player.userData.keyState[39] || player.userData.keyState[68])) {
+        // right arrow or 'd' - rotate right
+
+        //ver1
+        player.userData.rotation.y -= delta * player.userData.turnSpeed
+        //ver 2
+        //!(player.userData.keyState[40] || player.userData.keyState[83]) ? player.userData.rotation.y -= delta * player.userData.turnSpeed : player.userData.rotation.y += delta * player.userData.turnSpeed ; // switch for backward
+
+        //   player.quaternion.setFromEuler(player.userData.rotation) // this.matrixUpdate won't catch rotation. only quaternion is used
+        //updatePlayerData();
+        //socket.emit('updatePosition', playerData);
+    }
+    ;
+    if (player.userData.keyState[81]) {
+        // 'q' - strafe left
+        player.position.x += delta * player.userData.moveSpeed * Math.sin(player.userData.rotation.y);
+        player.position.z += delta * player.userData.moveSpeed * Math.cos(player.userData.rotation.y);
+        //player.position.x -= player.moveSpeed * Math.cos(player.rotation.y);
+        //player.position.z += player.moveSpeed * Math.sin(player.rotation.y);
+        //updatePlayerData();
+        //socket.emit('updatePosition', playerData);
+    }
+    ;
+    if (player.userData.keyState[69]) {
+        // 'e' - strafe right
+        player.position.x -= delta * player.userData.moveSpeed * Math.sin(player.userData.rotation.y);
+        player.position.z -= delta * player.userData.moveSpeed * Math.cos(player.userData.rotation.y);
+        //player.position.x += player.moveSpeed * Math.cos(player.rotation.y);
+        //player.position.z -= player.moveSpeed * Math.sin(player.rotation.y);
+        //updatePlayerData();
+        //socket.emit('updatePosition', playerData);
+    }
+    ;
+
+    (player.userData.mouseState[0]) ? player.actions.attack.play() : player.actions.attack.stop();
+    (player.userData.keyState[70]) ? player.actions.wave.play() : player.actions.wave.stop();
+
+
+    player.mixer.update(delta);
+
+
+};
+*/
+/*
 var checkKeyStates = function (player, delta) {
 
     // console.log(player.mixer.time + '  VS  ' + player.userData.mixerTime);
@@ -48,8 +145,19 @@ var checkKeyStates = function (player, delta) {
     if (player.userData.keyState[38] || player.userData.keyState[87]) {
         // up arrow or 'w' - move forward
         player.actions.run.play()
-        player.position.x -= delta * player.userData.moveSpeed * Math.cos(player.userData.rotation._y);  //DO NOT USE PLAYER.ROTATION ITS NOT LINKED!!!
-        player.position.z += delta * player.userData.moveSpeed * Math.sin(player.userData.rotation._y);
+        //player.position.x -= delta * player.userData.moveSpeed * Math.cos(player.userData.rotation.y);  //DO NOT USE PLAYER.ROTATION ITS NOT LINKED!!!
+        //player.position.z += delta * player.userData.moveSpeed * Math.sin(player.userData.rotation.y);
+
+
+        var dX = -delta * player.userData.moveSpeed * Math.cos(player.userData.rotation.y);
+        var dZ =  delta * player.userData.moveSpeed * Math.sin(player.userData.rotation.y);
+
+        player.position.add(new THREE.Vector3(dX,0 ,dZ));
+
+
+
+
+
 
     } else {
         player.actions.run.stop()
@@ -60,8 +168,19 @@ var checkKeyStates = function (player, delta) {
 
     if (player.userData.keyState[40] || player.userData.keyState[83]) {
         // down arrow or 's' - move backward
-        player.position.x += delta * player.userData.moveSpeed * Math.cos(player.userData.rotation._y);
-        player.position.z -= delta * player.userData.moveSpeed * Math.sin(player.userData.rotation._y);
+
+
+   //     player.position.x += delta * player.userData.moveSpeed * Math.cos(player.userData.rotation.y);
+   //     player.position.z -= delta * player.userData.moveSpeed * Math.sin(player.userData.rotation.y);
+
+        var dX = delta * player.userData.moveSpeed * Math.cos(player.userData.rotation.y);
+        var dZ = - delta * player.userData.moveSpeed * Math.sin(player.userData.rotation.y);
+
+        player.position.add(new THREE.Vector3(dX,0 ,dZ));
+
+
+
+
         //player.position.x += player.moveSpeed * Math.sin(player.rotation.y);
         //player.position.z += player.moveSpeed * Math.cos(player.rotation.y);
 
@@ -71,26 +190,43 @@ var checkKeyStates = function (player, delta) {
     ;
     if (player.userData.keyState[37] || player.userData.keyState[65]) {
         // left arrow or 'a' - rotate left
-        !(player.userData.keyState[40] || player.userData.keyState[83]) ? player.userData.rotation._y += delta * player.userData.turnSpeed : player.userData.rotation._y -= delta * player.userData.turnSpeed; // switch for backward
 
-        player.quaternion.setFromEuler(player.userData.rotation) // this.matrixUpdate won't catch rotation. only quaternion is used
+        //ver1
+        player.userData.rotation.y+= delta * player.userData.turnSpeed
+
+        //ver 2
+        //!(player.userData.keyState[40] || player.userData.keyState[83]) ? player.userData.rotation.y+= delta * player.userData.turnSpeed : player.userData.rotation.y -= delta * player.userData.turnSpeed; // switch for backward
+
+      //  player.quaternion.setFromEuler(player.userData.rotation) // this.matrixUpdate won't catch rotation. only quaternion is used
         //updatePlayerData();
         //socket.emit('updatePosition', playerData);
+       // player.updateMatrixWorld()
     }
     ;
     if ((player.userData.keyState[39] || player.userData.keyState[68])) {
         // right arrow or 'd' - rotate right
-        !(player.userData.keyState[40] || player.userData.keyState[83]) ? player.userData.rotation._y -= delta * player.userData.turnSpeed : player.userData.rotation._y += delta * player.userData.turnSpeed; // switch for backward
+        player.userData.rotation.y-= delta * player.userData.turnSpeed
 
-        player.quaternion.setFromEuler(player.userData.rotation) // this.matrixUpdate won't catch rotation. only quaternion is used
+        //ver2
+        //!(player.userData.keyState[40] || player.userData.keyState[83]) ? player.userData.rotation.y  -= delta * player.userData.turnSpeed : player.userData.rotation.y += delta * player.userData.turnSpeed; // switch for backward
+
+      //  player.quaternion.setFromEuler(player.userData.rotation) // this.matrixUpdate won't catch rotation. only quaternion is used
         //updatePlayerData();
         //socket.emit('updatePosition', playerData);
     }
     ;
     if (player.userData.keyState[81]) {
         // 'q' - strafe left
-        player.position.x += delta * player.userData.moveSpeed * Math.sin(player.userData.rotation._y);
-        player.position.z += delta * player.userData.moveSpeed * Math.cos(player.userData.rotation._y);
+        var dX =  delta * player.userData.moveSpeed * Math.sin(player.userData.rotation.y);
+        var dZ  =  delta * player.userData.moveSpeed * Math.cos(player.userData.rotation.y);
+
+        player.position.add(new THREE.Vector3(dX,0 ,dZ));
+
+
+        //player.position.x += delta * player.userData.moveSpeed * Math.sin(player.userData.rotation.y);
+        //player.position.z += delta * player.userData.moveSpeed * Math.cos(player.userData.rotation.y);
+
+
         //player.position.x -= player.moveSpeed * Math.cos(player.rotation.y);
         //player.position.z += player.moveSpeed * Math.sin(player.rotation.y);
         //updatePlayerData();
@@ -99,8 +235,14 @@ var checkKeyStates = function (player, delta) {
     ;
     if (player.userData.keyState[69]) {
         // 'e' - strafe right
-        player.position.x -= delta * player.userData.moveSpeed * Math.sin(player.userData.rotation._y);
-        player.position.z -= delta * player.userData.moveSpeed * Math.cos(player.userData.rotation._y);
+        var dX = - delta * player.userData.moveSpeed * Math.sin(player.userData.rotation.y);
+        var dZ  = - delta * player.userData.moveSpeed * Math.cos(player.userData.rotation.y);
+
+        player.position.add(new THREE.Vector3(dX,0 ,dZ));
+       // player.position.x -= delta * player.userData.moveSpeed * Math.sin(player.userData.rotation.y);
+       // player.position.z -= delta * player.userData.moveSpeed * Math.cos(player.userData.rotation.y);
+
+
         //player.position.x += player.moveSpeed * Math.cos(player.rotation.y);
         //player.position.z -= player.moveSpeed * Math.sin(player.rotation.y);
         //updatePlayerData();
@@ -117,7 +259,130 @@ var checkKeyStates = function (player, delta) {
 
 };
 
+*/
+function checkKeyStates_test(player, delta) {
 
+    //console.log(delta);
+
+    // console.log(player.mixer.time + '  VS  ' + player.mixerTime);
+// ROTATION !!!!!!!!! PLAYER.ROTATION IS NOT LINKED TO PLAYER.ROTATION -- kinda HACK
+
+    if (player.userData.keyState[38] || player.userData.keyState[87]) {
+        // up arrow or 'w' - move forward
+        //  player.actions.run.play()
+        //player.position.x -= delta * player.moveSpeed * Math.cos(player.rotation.y);  //DO NOT USE PLAYER.ROTATION ITS NOT LINKED!!!
+        //player.position.z += delta * player.moveSpeed * Math.sin(player.rotation.y);
+
+
+        var dX = -delta * player.userData.moveSpeed * Math.cos(player.rotation.y);
+        var dZ =  delta * player.userData.moveSpeed  * Math.sin(player.rotation.y);
+
+        player.position.add(new THREE.Vector3(dX,0 ,dZ));
+
+
+
+
+
+
+    } else {
+        //  player.actions.run.stop()
+    };
+
+    //  if (!player.keyState[38] && !player.keyState[87])  player.actions.run.stop(); //run stop anim
+
+
+    if (player.userData.keyState[40] || player.userData.keyState[83]) {
+        // down arrow or 's' - move backward
+
+
+        //     player.position.x += delta * player.moveSpeed * Math.cos(player.rotation.y);
+        //     player.position.z -= delta * player.moveSpeed * Math.sin(player.rotation.y);
+
+        var dX = delta * player.userData.moveSpeed* Math.cos(player.rotation.y);
+        var dZ = - delta * player.userData.moveSpeed * Math.sin(player.rotation.y);
+
+        player.position.add(new THREE.Vector3(dX,0 ,dZ));
+
+
+
+
+        //player.position.x += player.moveSpeed * Math.sin(player.rotation.y);
+        //player.position.z += player.moveSpeed * Math.cos(player.rotation.y);
+
+        //updatePlayerData();
+        //socket.emit('updatePosition', playerData);
+    }
+    ;
+    if (player.userData.keyState[37] || player.userData.keyState[65]) {
+        // left arrow or 'a' - rotate left
+
+        //ver1
+        player.rotation.y+= delta * player.userData.turnSpeed//player.turnSpeed
+
+        //ver 2
+        //!(player.keyState[40] || player.keyState[83]) ? player.rotation.y+= delta * player.turnSpeed : player.rotation.y -= delta * player.turnSpeed; // switch for backward
+
+        //  player.quaternion.setFromEuler(player.rotation) // this.matrixUpdate won't catch rotation. only quaternion is used
+        //updatePlayerData();
+        //socket.emit('updatePosition', playerData);
+        // player.updateMatrixWorld()
+    }
+    ;
+    if ((player.userData.keyState[39] || player.userData.keyState[68])) {
+        // right arrow or 'd' - rotate right
+        player.rotation.y-= delta * player.userData.turnSpeed//player.turnSpeed
+
+        //ver2
+        //!(player.keyState[40] || player.keyState[83]) ? player.rotation.y  -= delta * player.turnSpeed : player.rotation.y += delta * player.turnSpeed; // switch for backward
+
+        //  player.quaternion.setFromEuler(player.rotation) // this.matrixUpdate won't catch rotation. only quaternion is used
+        //updatePlayerData();
+        //socket.emit('updatePosition', playerData);
+    }
+    ;
+    if (player.userData.keyState[81]) {
+        // 'q' - strafe left
+        var dX =  delta * player.userData.moveSpeed * Math.sin(player.rotation.y);
+        var dZ  =  delta * player.userData.moveSpeed * Math.cos(player.rotation.y);
+
+        player.position.add(new THREE.Vector3(dX,0 ,dZ));
+
+
+        //player.position.x += delta * player.moveSpeed * Math.sin(player.rotation.y);
+        //player.position.z += delta * player.moveSpeed * Math.cos(player.rotation.y);
+
+
+        //player.position.x -= player.moveSpeed * Math.cos(player.rotation.y);
+        //player.position.z += player.moveSpeed * Math.sin(player.rotation.y);
+        //updatePlayerData();
+        //socket.emit('updatePosition', playerData);
+    }
+    ;
+    if (player.userData.keyState[69]) {
+        // 'e' - strafe right
+        var dX = - delta * player.userData.moveSpeed * Math.sin(player.rotation.y);
+        var dZ  = - delta * player.userData.moveSpeed * Math.cos(player.rotation.y);
+
+        player.position.add(new THREE.Vector3(dX,0 ,dZ));
+        // player.position.x -= delta * player.moveSpeed * Math.sin(player.rotation.y);
+        // player.position.z -= delta * player.moveSpeed * Math.cos(player.rotation.y);
+
+
+        //player.position.x += player.moveSpeed * Math.cos(player.rotation.y);
+        //player.position.z -= player.moveSpeed * Math.sin(player.rotation.y);
+        //updatePlayerData();
+        //socket.emit('updatePosition', playerData);
+    }
+
+
+    //  console.log(player.mouseState[0]);
+    // (player.mouseState[0]) ? player.actions.attack.play() : player.actions.attack.stop();
+    // (player.keyState[70]) ? player.actions.wave.play() : player.actions.wave.stop();
+
+
+};
+
+/*
 
 var checkRayCast = function (object) {
 
@@ -162,36 +427,7 @@ var checkRayCast = function (object) {
 
 
 
-    /*
-     if (intersects.length > 0) {
-     if (player.intersected != intersects[0].object) {
-     if (player.intersected) player.intersected.material.emissive.setHex(player.intersected.currentHex);
-     player.intersected = intersects[0].object;
-     player.intersected.currentHex = player.intersected.material.emissive.getHex();
-     player.intersected.material.emissive.setHex(0xff0000);
-     }
-     } else {
-     if (player.intersected) player.intersected.material.emissive.setHex(player.intersected.currentHex);
-     player.intersected = null;
-     }
-     */
-
-    //console.log(intersects);
-    //     console.log('camera pos');
-    //     console.log(camera.position);
-//    console.log('camera aspect' + camera.aspect);
-//    console.log('proj matrix');
-//    console.log(camera.projectionMatrix);
-    //  console.log('mouse  x:' + mouse.x +' y: ' + mouse.y );
-    //  console.log('RAY FROM '+object.userData.playerId+ ' INTERSECTS OBJECT ' +(INTERSECTED ? INTERSECTED.userData.playerId : INTERSECTED ))
-    // console.log('Rotation '+ (INTERSECTED ? ('object rotation ' + JSON.stringify(INTERSECTED.rotation) + 'userData rotation ' + JSON.stringify(INTERSECTED.userData.rotation) ) : INTERSECTED ))
-
-    //  if(player.intersected) {console.log('RAY FROM '+player.playerId+ ' INTERSECTS object ' + player.intersected.id )} else (console.log(''));
-
-
-    //console.log()
-
-
 };
 
 
+*/

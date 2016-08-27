@@ -17,13 +17,15 @@ var g_Ghosts = [];
 
 var g_Player, g_PlayerObject;
 var objectLoader = new THREE.ObjectLoader();
+var g_timeReminder = 0;
 
-
-var g_lastTick = 0;
+//var g_lastTick = 0;
+var serverLastUpdateTime = 0;
+var serverLastSentTime = 0
 var g_Current_Client_time = 0;
 var g_Current_Rendiring_time = 0;
 
-var g_lastPs_sec = 0;
+
 
 var joystick, joystick2
 //var g_currentPs_sec = 0;
@@ -32,7 +34,7 @@ var g_CheckPoint;
 
 // var mouse = new THREE.Vector2();
 
-var geometryTemplate;
+var geometryTemplate, multiMaterialTemplate;
 ////////////////////////////////////
 //init
 var light = new THREE.DirectionalLight(0xffffff, 1.5);
@@ -48,7 +50,7 @@ var scene_world_bodys_meshs = initWorld() //new THREE.Scene()
 var scene = scene_world_bodys_meshs.scene;
 //var OIMOworld = scene_world_bodys_meshs.OIMOworld;
 //var OIMObodys = (scene_world_bodys_meshs.bodys);
-var OIMOmeshs = (scene_world_bodys_meshs.meshs);
+//var OIMOmeshs = (scene_world_bodys_meshs.meshs);
 
 //var scene = new Physijs.Scene({fixedTimeStep: 0 });
 scene.fog = new THREE.FogExp2(0x000000, 0.001);
@@ -59,12 +61,73 @@ scene.autoUpdate = false || true;
 
 scene.add(light);
 
-var JSONloader = new THREE.JSONLoader();
+//var JSONloader = new THREE.JSONLoader();
 var loader = new THREE.JSONLoader();
 loader.load("droid.js", function (geometry) {
-    geometryTemplate = geometry;
+   // geometryTemplate = geometry;
     //geometryTemplate.scale(.02,.02,.02);
+   // geometryTemplate.rotateY( Math.PI );
+    //geometry.updateMatrix();
+    //geometryTemplate.verticesNeedUpdate = true;
 });
+
+
+//var mixer;
+loader.load('../models/Y_Bot/Y_Bot_v2.json',function(geometry, materials) {
+
+    materials.forEach(function(material){
+        material.skinning = true;
+    })
+
+    multiMaterialTemplate = materials;
+    geometryTemplate = geometry;
+  /*
+    var multiMaterial = new THREE.MultiMaterial(materials);
+
+    var mesh = new THREE.SkinnedMesh( geometry, multiMaterial);
+    mesh.name = 'model';
+
+    mixer = new THREE.AnimationMixer( mesh );
+
+    mixer.clipAction(mesh.geometry.animations[1]).play();
+    var cubeGeometry = new THREE.BoxGeometry( 1, 1, 1 );
+    var cubeMaterial = new THREE.MeshBasicMaterial( {color: 0x00ff00} );
+    cubeMaterial.transparent = true;
+    cubeMaterial.opacity = 0.5;
+
+    //cubeMaterial.dynamic = true;
+    //cubeMaterial.skinning = true;
+
+   var cube = new THREE.Mesh( cubeGeometry, cubeMaterial );
+
+    //cube.updateMatrix();
+    //cube.updateMatrixWorld();
+
+    cube.position.copy(mesh.children[0].position);
+    cube.updateMatrix();
+    //cube.updateMatrixWorld();
+
+
+
+    THREE.SceneUtils.attach ( cube, scene, mesh.children[0] )
+
+    scene.add(mesh);
+
+    //helper = new THREE.SkeletonHelper( mesh );
+
+    //scene.add(helper);
+    //scene.add(cube);
+*/
+
+});
+
+
+
+
+//var geoMatTemplate =  initGeoMat();
+
+//geometryTemplate = geoMatTemplate.geometryTemplate;
+//multiMaterialTemplate = geoMatTemplate.multiMaterialTemplate;
 
 ///
 
@@ -213,310 +276,6 @@ function playerForId(id) {
 };
 
 
-var createPlayer = function (data) {
-
-
-    var material = new THREE.MeshPhongMaterial({
-        color: 0xffffff,
-        morphTargets: true,
-        vertexColors: THREE.FaceColors,
-        shading: THREE.FlatShading
-    });
-
-
-   // geometryTemplate.scale(2,2,2);
-   // geometryTemplate.verticesNeedUpdate = true;
-
-  //  geometryTemplate.scale(.02,.02,.02);
-
-
- //   var playerMesh =   new THREE.Mesh(geometryTemplate, material);//new physijs.Convex(geometryTemplate, material) //  ;//  //
-    var playerMesh = new Physijs.BoxMesh(geometryTemplate, material , 1);
-
-
-  //  playerMesh.scale.set(.02,.02,.02)
-
-
-
-
-    var player = new Player(playerMesh, data.playerId); // use Server socket id //
-
-
-
-
-
-
-
-
-    Object.defineProperty(player, 'mixerTime', {
-        get: function () {
-            return playerMesh.mixer.time;
-        },
-        set: function (val) {
-            playerMesh.mixer.time = val;
-        }
-    });
-
-    Object.defineProperties(player.actions, {
-        'standTime': {
-            get: function () {
-                return playerMesh.actions.stand.time;
-            },
-            set: function (val) {
-                playerMesh.actions.stand.time = val;
-            }
-        },
-        'runTime': {
-            get: function () {
-                return playerMesh.actions.run.time;
-            },
-            set: function (val) {
-                playerMesh.actions.run.time = val;
-            }
-
-        },
-        'attackTime': {
-            get: function () {
-                return playerMesh.actions.attack.time;
-            },
-            set: function (val) {
-                playerMesh.actions.attack.time = val;
-            }
-
-        },
-        'waveTime': {
-            get: function () {
-                return playerMesh.actions.wave.time;
-            },
-            set: function (val) {
-                playerMesh.actions.wave.time = val;
-            }
-
-        }
-
-    });
-
-
-/*
-
-   // playerMesh.geometry.center();
-    console.log('bbox');
-    console.log(playerMesh.geometry.boundingBox);
-
-    var hex  = 0xff0000;
-    var bbox = new THREE.BoundingBoxHelper( playerMesh, hex );
-    //bbox.box = playerMesh.geometry.boundingBox
-    // bbox.box.setFromObject( test );
-    //  bbox.updateMatrix();
-    bbox.update();
-
-    var diff_mesh_bbox = playerMesh.position.clone().sub(bbox.position);
-    playerMesh.translateX( -diff_mesh_bbox.x  );
-    playerMesh.translateY( -diff_mesh_bbox.y  );
-    playerMesh.translateZ( -diff_mesh_bbox.z  );
-
-    //playerMesh.geometry.translate(diff_mesh_bbox.x,diff_mesh_bbox.y,diff_mesh_bbox.z)
-   // bbox.geometry.translate(-diff_mesh_bbox.x,-diff_mesh_bbox.y,-diff_mesh_bbox.z)
-   // playerMesh.updateMatrix();
-   // bbox.update();
-
-    //playerMesh.position.copy(bbox.position);
-
-    console.log('PM position '+JSON.stringify(playerMesh.position))
-    console.log('bbox position '+JSON.stringify(bbox.position))
-    console.log('bbox center '+JSON.stringify(bbox.box));
- //   console.log(JSON.stringify(playerMesh.userData.diff_mesh_bbox))
-
-    bbox.name='bbox';
-
-    var axisHelper = new THREE.AxisHelper( 5 );
-    bbox.add( axisHelper );
-
-
-  //  console.log(bbox);
-
-*/
-    scene.add(playerMesh);
-    objects.push(playerMesh);
-    players.push(player);
- //   scene.add( bbox );
-
-
-
-
-
-/*
-    var hex  = 0xff0000;
-    var bbox = new THREE.BoundingBoxHelper( playerMesh, hex );
-    // bbox.box.setFromObject( test );
-    //  bbox.updateMatrix();
-    bbox.update();
-
-
-
-    var diff_mesh_bbox = playerMesh.position.clone().sub(bbox.position);
-    playerMesh.geometry.translate(diff_mesh_bbox.x,diff_mesh_bbox.y,diff_mesh_bbox.z)
-
-
-  //  console.log(JSON.stringify(test.position))
-  //  console.log(JSON.stringify(bbox.position))
-  //  console.log(JSON.stringify(bbox.box.center()));
-  //  console.log(JSON.stringify(test.diff_mesh_bbox))
-
-    bbox.name='bbox';
-
-
-
-
-
-
-
-    var axisHelper = new THREE.AxisHelper( 50 );
-    bbox.add( axisHelper );
-
-
-    console.log(bbox);
-  //  scene.add(test);
-    scene.add( bbox );
-    // scene.add (test);
-
-
-
-    var bbox_body = OIMOworld.add({type:'box', size:[bbox.scale.x,bbox.scale.y,bbox.scale.z], pos:[bbox.position.x,bbox.position.y,bbox.position.z], move:true, noSleep:true, world:OIMOworld});
-
-    bbox_body.name = 'bbox_body';
-    bbox_body.allowSleep = false;
-
-
-
-    // scene.add (test);
-
-
-
-
-
-
-
- //   var bbox_body = OIMOworld.add({type:'box', size:[bbox.scale.x,bbox.scale.y,bbox.scale.z], pos:[bbox.position.x,bbox.position.y,bbox.position.z], move:true, world:OIMOworld, name: 'bbox_body'});
-
-  //  OIMObodys.push(bbox_body);
-   // OIMOmeshs.push(bbox);
-
-    //bbox.add(playerMesh);
-
-
-/*
-    var playerMesh_body = OIMOworld.add({type:'box', size:[bbox.scale.x,bbox.scale.y,bbox.scale.z], pos:[bbox.position.x,bbox.position.y,bbox.position.z], move:true, world:OIMOworld,name: 'playerMesh_body',density: 5 });
-
-    OIMObodys.push(playerMesh_body);
-    OIMOmeshs.push(playerMesh);
-*/
-
-
-
-
-    //console.log(JSON.stringify(player));
-
-    return player
-
-};
-
-
-var addOtherPlayer = function (data) {
-    //   console.log('client_world: Other PLayer DATA HAS ARRIVED');
-    //   console.log(data);
-
-
-    var material = new THREE.MeshPhongMaterial({
-        color: 0xffffff,
-        morphTargets: true,
-        vertexColors: THREE.FaceColors,
-        shading: THREE.FlatShading
-    });
-
- //   geometryTemplate.scale(.02,.02,.02);
-
-    var playerMesh = new THREE.Mesh(geometryTemplate, material);
-   // var playerMesh = new Physijs.BoxMesh(geometryTemplate, material , 1);
-    //playerMesh.scale.set(.02,.02,.02);
-
-    var player = new Player(playerMesh, data.playerId); // use Server socket id //
-
-
-
-
-    Object.defineProperty(player, 'mixerTime', {
-        get: function () {
-            return playerMesh.mixer.time;
-        },
-        set: function (val) {
-            playerMesh.mixer.time = val;
-        }
-    });
-
-    Object.defineProperties(player.actions, {
-        'standTime': {
-            get: function () {
-                return playerMesh.actions.stand.time;
-            },
-            set: function (val) {
-                playerMesh.actions.stand.time = val;
-            }
-        },
-        'runTime': {
-            get: function () {
-                return playerMesh.actions.run.time;
-            },
-            set: function (val) {
-                playerMesh.actions.run.time = val;
-            }
-
-        },
-        'attackTime': {
-            get: function () {
-                return playerMesh.actions.attack.time;
-            },
-            set: function (val) {
-                playerMesh.actions.attack.time = val;
-            }
-
-        },
-        'waveTime': {
-            get: function () {
-                return playerMesh.actions.wave.time;
-            },
-            set: function (val) {
-                playerMesh.actions.wave.time = val;
-            }
-
-        }
-
-    });
-
-
-
-     console.log('!!!!!!!!!!!!!!!!!!data.ts_client!!!!!!   '+ data.ts_client)
-
-
-    scene.add(playerMesh);
-    objects.push(playerMesh);
-    players.push(player);
-
-
-
-
-   // alert('!!!!!!!!!!!!!!!!!!data.ts_client!!!!!!   '+ data.ts_client )
-    player.local_timer = data.ts_client;
-    player.ts_client = data.ts_client;
-
-
-
-    return player
-
-
-};
-
-
 var removeOtherPlayer = function (data) {  // need to delete two objects!!!
 
     var player = playerForId(data.playerId);
@@ -642,28 +401,60 @@ function onDocumentMouseMoveRaycater(event) {
 
 
 
-var updateOnePlayer = function (playerData) {
+var updateOnePlayer = function (playerData, ts) {
 
 
 
     var player = objectForPID(playerData.playerId);
     if (player) {
 
+     //   console.log('dirty position ' + player.__dirtyPosition)
+
+        player.__dirtyPosition = true; // for other players
+        player.__dirtyRotation = true; // for other players
+  //      player.setLinearVelocity({x: 0, y:player._physijs.linearVelocity.y, z: 0} )  // + event listener + checkKeystates
+
+
+
+
 
 
 
      //   player.userData.isCameraFollow = playerData.isCameraFollow;
-        player.userData.ts_server = playerData.ts_server // last ts proceeded by server;
-        player.userData.ts_client = playerData.ts_client // last ts proceeded by server;
+        player.userData.ts = ts;
+        player.userData.serverLastSentTime = serverLastSentTime;
+        player.userData.ts_server = playerData.ts_client//serverLastUpdateTime//playerData.ts_server // last ts proceeded by server;
+      //  player.userData.ts_client = playerData.ts_client // last ts proceeded by server;
         player.userData.keyState = playerData.keyState;
         player.userData.mouseState = playerData.mouseState;
         player.userData.mouse2D.set(playerData.mouse2D.x, playerData.mouse2D.y);
 
         player.userData.last_client_delta = playerData.last_client_delta;
         player.position.set(playerData.position.x, playerData.position.y, playerData.position.z);
+        console.log(JSON.stringify(player.position));
         //TODO: get rid of rotation it's re-linking HELL!
        // console.log('serv rot ' +JSON.stringify(playerData.rotation));
-        player.userData.rotation.set(playerData.rotation._x, playerData.rotation._y, playerData.rotation._z, playerData.rotation._order);
+        //player.userData.rotation.set(playerData.rotation._x, playerData.rotation._y, playerData.rotation._z, playerData.rotation._order);
+        player.userData.quaternion.set(playerData.quaternion._x,playerData.quaternion._y,playerData.quaternion._z,playerData.quaternion._w)
+
+        player.userData.timeReminder = playerData.timeReminder;
+        player.userData.numberSteps = playerData.numberSteps;
+
+
+
+
+        //physijs
+         // player.setAngularVelocity(playerData._physijs.angularVelocity);
+        // player._physijs.height = playerData._physijs.height;
+        // player._physijs.id = playerData._physijs.id;
+         // player.setLinearVelocity( playerData._physijs.linearVelocity);
+        // player._physijs.mass = playerData._physijs.mass;
+        //player._physijs.position = playerData._physijs.position;
+       //   player._physijs.position = playerData.position ;// initial default
+       //   player._physijs.rotation = playerData.quaternion;
+        // player._physijs.radius = playerData._physijs.rotation;
+        // player._physijs.touches = playerData._physijs.touches;
+        //  player._physijs.type = playerData._physijs.type;
 
       //   console.log(player.userData.quaternion);
        // console.log (player.rotation.constructor.name);
@@ -675,10 +466,14 @@ var updateOnePlayer = function (playerData) {
        // player.actions.wave.play();
 
 
-        (playerData.keyState[38] || playerData.keyState[87]) ? player.actions.run.play() : player.actions.run.stop();
-        (playerData.mouseState[0]) ? player.actions.attack.play() : player.actions.attack.stop();
-        (playerData.keyState[70]) ? player.actions.wave.play() : player.actions.wave.stop();
 
+
+        (playerData.keyState[38] || playerData.keyState[87]) ? player.actions.run.play() :  player.actions.run.stop();
+        (playerData.keyState[40] || playerData.keyState[83]) ? player.actions.back.play() : player.actions.back.stop();
+
+        (playerData.mouseState[0]) ? player.actions.attack.play() : player.actions.attack.stop();
+       // (playerData.keyState[70]) ? player.actions.wave.play() : player.actions.wave.stop();
+/*
 
         player.userData.moveState = playerData.moveState;
 
@@ -687,6 +482,7 @@ var updateOnePlayer = function (playerData) {
             player.actions.painOne.play();
             player.actions.painOne.reset();
         }
+*/
 
 
         if (player.mixer.time != playerData.mixerTime) {
@@ -696,13 +492,15 @@ var updateOnePlayer = function (playerData) {
             //   console.log ('MIXER TIME CHANGED to'+ player.mixer.time + ' for '+ player.playerId +' at '+g_Player.playerId);
 
         }
+
         if (player.actions.stand.time != playerData.actions.standTime) {
             player.actions.stand.time = playerData.actions.standTime;
-            //  console.log ('STAND TIME CHANGED');
+          //    console.log ('STAND TIME CHANGED');
         }
+
         if (player.actions.run.time != playerData.actions.runTime) {
             player.actions.run.time = playerData.actions.runTime;
-            //  console.log ('RUN TIME CHANGED');
+              console.log ('RUN TIME CHANGED');
         }
 
         if (player.actions.attack.time != playerData.actions.attackTime) {
@@ -710,13 +508,25 @@ var updateOnePlayer = function (playerData) {
             player.actions.attack.time = playerData.actions.attackTime;
             //  console.log ('ATTACK TIME CHANGED'+ player.actions.attack.time +' ' + playerData.actions.attackTime);
         }
-
+        if (player.actions.back.time != playerData.actions.backTime) {
+            //  console.log ('PRE ATTACK TIME CHANGED'+ player.actions.attack.time +' ' + playerData.actions.attackTime);
+            player.actions.back.time = playerData.actions.backTime;
+            //  console.log ('ATTACK TIME CHANGED'+ player.actions.attack.time +' ' + playerData.actions.attackTime);
+        }
+/*
         if (player.actions.wave.time != playerData.actions.waveTime) {
             player.actions.wave.time = playerData.actions.waveTime;
             //  console.log ('WAVE TIME CHANGED');
         }
-
+*/
         player.mixer.update(0);
+
+
+        //player.__dirtyPosition = true; //physi.js
+        //player.__dirtyRotation = true;
+
+        //player.setAngularVelocity(playerData._physijs.angularVelocity);
+        //player.setLinearVelocity( playerData._physijs.linearVelocity);
 
         if (player.playerId == g_Player.playerId) {
 
@@ -724,7 +534,27 @@ var updateOnePlayer = function (playerData) {
             g_Player.camera = objectLoader.parse(playerData.cameraJSON);
            // g_Player.camera = camera;
 
+
+            //physijs
+
+          //  player.setAngularVelocity(playerData._physijs.angularVelocity);
+            // player._physijs.height = playerData._physijs.height;
+            // player._physijs.id = playerData._physijs.id;
+          //  player.setLinearVelocity( playerData._physijs.linearVelocity);
+            // player._physijs.mass = playerData._physijs.mass;
+            // player._physijs.position = playerData._physijs.position;
+            // player._physijs.radius = playerData._physijs.rotation;
+            // player._physijs.touches = playerData._physijs.touches;
+            //  player._physijs.type = playerData._physijs.type;
+
         }
+
+
+
+
+
+
+
     }
 
 };
@@ -767,8 +597,13 @@ console.log('cam 1st init')
 
 renderer = new THREE.WebGLRenderer();
 renderer.setSize(width, height);
-renderer.shadowMapEnabled = true;
-renderer.shadowMapSoft = true;
+
+renderer.gammaInput = true;
+renderer.gammaOutput = true;
+//renderer.shadowMap.enabled = true;
+//renderer.shadowMap.renderReverseSided = false;
+//renderer.shadowMapEnabled = true;
+//renderer.shadowMapSoft = true;
 
 //	renderer.shadowCameraNear = camera.near;
 //	renderer.shadowCameraFar = camera.far;
@@ -777,7 +612,7 @@ renderer.shadowMapSoft = true;
 //	renderer.shadowMapDarkness = 0.5;
 //	renderer.shadowMapWidth = 500;
 //	renderer.shadowMapHeight = 500;
-renderer.shadowMapEnabled = true;
+//renderer.shadowMapEnabled = true;
 //	renderer.shadowMapSoft = true;
 
 
@@ -807,7 +642,7 @@ var controls;
 // controls = new THREE.PointerLockControls(camera);
 // scene.add( controls.getObject() )
 // helper
-//   var axisHelper = new THREE.AxisHelper( 5 );
+   var axisHelper = new THREE.AxisHelper( 50 );
 //   scene.add( axisHelper );
 var dir = new THREE.Vector3(2, 2, 2).normalize();
 var origin = new THREE.Vector3(1, 1, 1);
@@ -836,7 +671,8 @@ sphere2.name = 'sphere2';
 sphere2.castShadow = true;
 scene.add(sphere2);
 
-
+//LINE
+/*
 var lineMaterial = new THREE.LineBasicMaterial({color: 0x0000ff});
 var lineGeometry = new THREE.Geometry();
 //lineGeometry.verticesNeedUpdate = true;
@@ -846,7 +682,7 @@ line.name = 'line';
 
 
 scene.add(line);
-
+*/
 
 /**
  * create field
@@ -894,11 +730,11 @@ for (var i = 0; i < 100; i++) {
 */
 
 
-
-var isPrediction = false //|| true;
+//var isPhysics = false||true;
+var isPrediction = false || true;
 var isServerUpdate = false || true;
 //var isAnim = false ||true;
-var isReconciliation = false// ||true;
+var isReconciliation = false ||true;
 var isInterpolation = false //|| true;
 
 var g_InterpolationMs = 1000;
@@ -1147,7 +983,8 @@ function animate(ts) {
 
     requestAnimationFrame(animate);
 
-   // console.log(g_Player.position);
+    ///console.log(scene.getObjectByName('greenCube').position);
+
 
 
 
@@ -1189,6 +1026,7 @@ function animate(ts) {
             v_serverData.players.forEach(function(player, i , arr){
                 if (player.playerId == g_Player.playerId) {
                     updateOnePlayer(player)
+
                   //  arr.splice(i,1);  // remove MyPlaer from v_serverData;
 
                 }   // update my player as always amd remove it from further updates;
@@ -1232,11 +1070,13 @@ function animate(ts) {
 
 
 
-                updateOnePlayer(player);
+                updateOnePlayer(player,ts);
+                //console.log('upd one plr done')
 
-                g_Pending_server_hist = [];
+
 
             });
+                 g_Pending_server_hist = [];
         }
 
 
@@ -1304,28 +1144,135 @@ function animate(ts) {
         if (isReconciliation) {
             //  g_Current_state = JSON.parse(JSON.stringify([g_Player.ts_client, g_Player.keyState, g_Player.mouseState, g_Player.mouse2D, g_Player.ts_server, g_Player.last_client_delta, g_Player.position,g_Player.rotation,g_Player.quaternion])); // mask out
 
+            var i;
+            for (i = g_Pending_input.length - 1; i>=0; i-- )
+            {
+                var state = g_Pending_input[i];
 
-            g_Pending_input.forEach(function (state, i, arr) {
-                if (state[0] <= g_Player.ts_client) {
+                if (state[0] < g_Player.ts_server){
 
+                    g_Pending_input.pop();
+
+                }else if (state[0] == g_Player.ts_server){
+
+                    console.log ('server delta pre: '+state[5] );
+                    console.log('reconcilation: keyState  client:  '+ JSON.stringify(g_Player.keyState) + ' Server '+ JSON.stringify(state[1]) + ' state[0] '+ state[0]) ;
+                    (g_Player.position.x != state[6].x || g_Player.position.y != state[6].y || g_Player.position.z != state[6].z) ?  console.warn('reconcilation: position  does not match. Server: ' + JSON.stringify(g_Player.position) +'   Client:'+  JSON.stringify(state[6]) + ' ts_server ' +  g_Player.ts_server + ' state[0] '+ state[0] ) : console.log('!!!!!!!!!!!!position okay!!!!!!!!!!!! g_Player.position' + JSON.stringify(g_Player.position) + ' state[6] '+ JSON.stringify(state[6])) ;
+                    if(g_Player.rotation.x != state[7]._x || g_Player.rotation.y != state[7]._y ||g_Player.rotation.z != state[7]._z || g_Player.rotation.order != state[7]._order) {
+                        console.warn('reconcilation: rotation  does not match. Server: ' + JSON.stringify(g_Player.rotation) +'   Client:'+  JSON.stringify(state[7])  + ' ts_server ' +  g_Player.ts_server + ' state[0] '+ state[0]  )}
+                    else {console.log('!!!!!!!!!!!!rotation okay!!!!!!!!!!!! g_Player.rotation' + JSON.stringify(g_Player.rotation) + ' state[7] '+ JSON.stringify(state[7]))} ;
+
+
+                } else {
+                    //   (g_Player.keyState != state[1]) ? console.log('reconcilation: keyState does not match. client:  '+ JSON.stringify(g_Player.keyState) + ' Server '+ JSON.stringify(state[1])) : null ;
+                    g_Player.keyState = state[1];
+                    g_Player.mouseState = state[2];
+                    g_Player.mouse2D.set(state[3].x, state[3].y);
+                    //   g_Player.ts_server = state[4];
+                    // (g_Player.last_client_delta != state[5]) ? console.log('reconcilation: last_client_delta  does not match. Client: '+ g_Player.last_client_delta +'   Server: ' + state[5] ) : null ;
+                    g_Player.last_client_delta = state[5];
+                    // (g_Player.position.x != state[6].x || g_Player.position.y != state[6].y || g_Player.position.z != state[6].z) ? console.log('reconcilation: position  does not match. Client: ' + JSON.stringify(g_Player.position) +'   Server:'+  JSON.stringify(state[6])  ) : console.log('!!!!!!!!!!!!position okay!!!!!!!!!!!!') ;
+                    // g_Player.position.set(state[6].x, state[6].y, state[6].z);
+                    // (g_Player.rotation.x != state[7]._x || g_Player.rotation.y != state[7]._y ||g_Player.rotation.z != state[7]._z || g_Player.rotation.order != state[7]._order) ? console.log('reconcilation: rotation  does not match. Client: ' + JSON.stringify(g_Player.rotation) +'   Server:'+  JSON.stringify(state[7])  ) : console.log('!!!!!!!!!!!!rotation okay!!!!!!!!!!!!') ;
+                    // g_Player.rotation.set(state[7]._x, state[7]._y, state[7]._z, state[7]._order)
+                    // g_Player.isCameraFollow = state[8];
+
+/////////////////////////
+
+                    predictPlayer([g_PlayerObject], g_Player.last_client_delta);
+                    //physis
+
+
+                    var step = 1/10;
+                    //  var numberSteps = Math.floor(g_timeReminder/step) // number of steps
+                    var numberSteps = state[11];
+                    scene.setFixedTimeStep(step);
+                    var s = 0
+                    for (s; s < numberSteps; s++ ){
+
+                        console.log('reconcile step = '+ (s+1) + ' ts: ' + state[0] )
+                        console.log(JSON.stringify(g_Player.rotation) + ' ' +JSON.stringify(g_Player.position) )
+                        scene.simulate(step,1);
+                    }
+
+//////////////////////////////////////////////////////////
                     /*
+                    var delta = state[5];
+                    var step = 1/10;
+                    scene.setFixedTimeStep(step);
+                    var numberSteps = state[11] // number of steps
+                    var tempNumberSteps = numberSteps;
+                    while (true) {
+                        if (tempNumberSteps == 0) {
+                            predictPlayer([g_PlayerObject], delta)
+                            break;
 
-                     if (state[0] == g_Player.ts_client){
-                     console.log('got it!');
-                     console.log(state[0] + ' vs '+ g_Player.ts_client);
-                     console.log('pending state '+JSON.stringify(state[6])+' VS '+ JSON.stringify(g_Player.position) +' curent server upd. State mouse2D '+JSON.stringify(state[3]) +' VS g_P mouse2D '+ JSON.stringify(g_Player.mouse2D))
+                        } else if (tempNumberSteps > 0) {
+                            tempNumberSteps -= 1; //decrease remained physics update count
+                            var d = Math.min(delta, step);
+                            delta -= d;
+                            predictPlayer([g_PlayerObject], d)
 
-                     } else (console.log('miss!'));
+                            if (delta== 0) break;
 
 
-                     //state already processed. remove it
-                     arr.splice(i,1);
-                     // console.log(g_Pending_input.length)
-                     //return
-                     */
-                    //console.log('miss!');
+
+
+                        }
+                    }
+*/
+
+////////////////////////////////////////////////////////
+/*
+                    var step = 1/10;
+                    scene.setFixedTimeStep(step);
+                    var numberStepsRec = state[11];
+
+                    do {
+                        var iDelta = Math.min( state[5], step)
+
+                        predictPlayer([g_PlayerObject],  state[5]); // state[5] -- last client delta
+                        state[5] -= iDelta;
+
+                        if ( 0 < numberStepsRec){
+                            console.log('reconcilation steps to go = '+ (numberStepsRec));
+                            console.log(JSON.stringify(g_Player.rotation) + ' ' +JSON.stringify(g_Player.position) )
+                            scene.simulate(step,1);
+
+                            numberStepsRec -= 1
+
+                        } else {console.log('reconsilation -- no simulation')}
+                        //  console.log('ts_client ' +g_PlayerObject.userData.ts_client +' after '+ JSON.stringify(g_PlayerObject.rotation )+ ' last c delta ' + g_Player.last_client_delta+  ' ts_server '+ g_PlayerObject.userData.ts_server)
+                        // physijs
+                        // console.log(delta*60)
+
+                    }while ( 0 < numberStepsRec);
+*/
+                    ////////////////////////////////////////////////////////////////////////////////
+                   // break;
+                }
+
+            }
+
+/*
+            g_Pending_input.forEach(function (state, i, arr) {
+                if (state[0] < g_Player.ts_server) {
+
 
                     arr.splice(i, 1);
+                } else if (state[0] == g_Player.ts_server){
+                    console.log ('server delta pre: '+state[5] );
+                    console.log('reconcilation: keyState  client:  '+ JSON.stringify(g_Player.keyState) + ' Server '+ JSON.stringify(state[1])) ;
+                    (g_Player.position.x != state[6].x || g_Player.position.y != state[6].y || g_Player.position.z != state[6].z) ?
+                        console.warn('reconcilation: position  does not match. Client: ' + JSON.stringify(g_Player.position) +'   Server:'+  JSON.stringify(state[6]) + ' ts_server ' +  g_Player.ts_server + ' state[0] '+ state[0] ) : console.log('!!!!!!!!!!!!position okay!!!!!!!!!!!!') ;
+                    if(g_Player.rotation.x != state[7]._x || g_Player.rotation.y != state[7]._y ||g_Player.rotation.z != state[7]._z || g_Player.rotation.order != state[7]._order) {
+                        console.warn('reconcilation: rotation  does not match. Client: ' + JSON.stringify(g_Player.rotation) +'   Server:'+  JSON.stringify(state[7]) +'   Server:'+  JSON.stringify(state[6]) + ' ts_server ' +  g_Player.ts_server + ' state[0] '+ state[0]  )}
+                    else {console.log('!!!!!!!!!!!!rotation okay!!!!!!!!!!!!')} ;
+
+
+
+                   // arr.splice(i, 1);
+
                 } else {
 
                //     console.log(JSON.stringify(state[7]));
@@ -1337,20 +1284,44 @@ function animate(ts) {
 
                     //process input.
                     // masking
-                    g_Player.ts_client = state[0];
-                    g_Player.keyState = state[1];
-                    g_Player.mouseState = state[2];
-                    g_Player.mouse2D.set(state[3].x, state[3].y);
-                    g_Player.ts_server = state[4];
-                    g_Player.last_client_delta = state[5]
-                    g_Player.position.set(state[6].x, state[6].y, state[6].z)
-                    g_Player.rotation.set(state[7]._x, state[7]._y, state[7]._z, state[7]._order)
-                    g_Player.isCameraFollow = state[8];
-                    predictPlayer([g_PlayerObject], g_Player.last_client_delta)
+                   // g_Player.ts_client = state[0];
+                 //   (g_Player.keyState != state[1]) ? console.log('reconcilation: keyState does not match. client:  '+ JSON.stringify(g_Player.keyState) + ' Server '+ JSON.stringify(state[1])) : null ;
+                      g_Player.keyState = state[1];
+                      g_Player.mouseState = state[2];
+                      g_Player.mouse2D.set(state[3].x, state[3].y);
+                 //   g_Player.ts_server = state[4];
+                   // (g_Player.last_client_delta != state[5]) ? console.log('reconcilation: last_client_delta  does not match. Client: '+ g_Player.last_client_delta +'   Server: ' + state[5] ) : null ;
+                      g_Player.last_client_delta = state[5];
+                   // (g_Player.position.x != state[6].x || g_Player.position.y != state[6].y || g_Player.position.z != state[6].z) ? console.log('reconcilation: position  does not match. Client: ' + JSON.stringify(g_Player.position) +'   Server:'+  JSON.stringify(state[6])  ) : console.log('!!!!!!!!!!!!position okay!!!!!!!!!!!!') ;
+                   // g_Player.position.set(state[6].x, state[6].y, state[6].z);
+                   // (g_Player.rotation.x != state[7]._x || g_Player.rotation.y != state[7]._y ||g_Player.rotation.z != state[7]._z || g_Player.rotation.order != state[7]._order) ? console.log('reconcilation: rotation  does not match. Client: ' + JSON.stringify(g_Player.rotation) +'   Server:'+  JSON.stringify(state[7])  ) : console.log('!!!!!!!!!!!!rotation okay!!!!!!!!!!!!') ;
+                   // g_Player.rotation.set(state[7]._x, state[7]._y, state[7]._z, state[7]._order)
+                   // g_Player.isCameraFollow = state[8];
+
+                    predictPlayer([g_PlayerObject], g_Player.last_client_delta);
+
+
+
+                    //physis
+                    var step = 1/60;
+                    //  var numberSteps = Math.floor(g_timeReminder/step) // number of steps
+                    var numberSteps = state[11];
+                    scene.setFixedTimeStep(step);
+                    var s = 0
+                    for (s; s < numberSteps; s++ ){
+
+                        console.log('reconcile step = '+ (s+1))
+                        scene.simulate(step,1);
+                    }
+                   // scene.setFixedTimeStep(1/60);
+                    //scene.simulate(g_Player.last_client_delta, 5);
 
 
                 }
             });
+
+*/
+
 
 
             // g_Player.ts_client = g_Current_state[0];
@@ -1386,6 +1357,14 @@ function animate(ts) {
 
         var delta = clock.getDelta();
 
+        g_timeReminder += delta; // add phy delta
+        var step = 1/10;
+      //  var numberSteps = Math.min(Math.floor(g_timeReminder/step),5) // number of steps ; up to 5
+        var numberSteps = Math.floor(g_timeReminder/step)
+      //  var numberSteps = Math.ceil(g_timeReminder/step)
+
+       // if (delta < 1/60) console.warn('delta '+ delta);
+
        // scene.children[106].rotation.x += delta * 2;
        // scene.children[106].rotation.y = 1.5;
 
@@ -1406,11 +1385,16 @@ function animate(ts) {
         g_Player.mouse2D.set(g_Current_state.mouse2D.x, g_Current_state.mouse2D.y);
 
 
+        console.log(g_Player.ts_client)
+
+
         // send input to the serverawawawawawaw
         //COPY OBJECT
-        var state = JSON.parse(JSON.stringify([g_Player.ts_client, g_Player.keyState, g_Player.mouseState, g_Player.mouse2D, g_Player.ts_server, g_Player.last_client_delta, g_Player.position, g_Player.rotation, g_Player.isCameraFollow]));
+        var sendState = JSON.parse(JSON.stringify([g_Player.ts_client, g_Player.keyState, g_Player.mouseState, g_Player.mouse2D, g_Player.ts_server, g_Player.last_client_delta, g_Player.position, g_Player.rotation, g_Player.isCameraFollow, g_Player.serverLastSentTime,g_Player.mixerTime, numberSteps,g_timeReminder]));
+      //  var state = [g_Player.ts_client, g_Player.keyState, g_Player.mouseState, g_Player.mouse2D, g_Player.ts_server, g_Player.last_client_delta, g_Player.position, g_Player.rotation, g_Player.isCameraFollow, g_Player.serverLastSentTime,g_Player.mixerTime];
+console.log(sendState[1])
         //TODO: send one object instead of Array of objects;
-        socket.emit('playerState', state);
+        socket.emit('playerState', sendState);
 
 
 
@@ -1547,22 +1531,111 @@ function animate(ts) {
             //    console.log('SERVER/PREDICT/RECONCILE '+isServerUpdate+' '+isPrediction+' '+isReconciliation+ ' '+ g_Player.ts_client +' ' + JSON.stringify(g_Player));
 
             //updateOimoPhysics(OIMOworld, OIMObodys, OIMOmeshs);
-            scene.setFixedTimeStep(delta);
-            scene.simulate(delta);
-            predictPlayer([g_PlayerObject], delta);
+
+
+                //  console.log('ts_client ' + g_PlayerObject.userData.ts_client +' pre '+ JSON.stringify(g_PlayerObject.rotation) + ' delta '+ delta  + ' ts_server '+ g_PlayerObject.userData.ts_server)
+/*
+            var step = 1/10;
+            var numberSteps = Math.floor(g_timeReminder/step)
+            var stepsIterator = numberSteps;
+            scene.setFixedTimeStep(step);
+
+
+
+            do {
+                var iDelta = Math.min(delta, step)
+                predictPlayer([g_PlayerObject], iDelta);
+                delta -= iDelta;
+
+                if ( 0 < stepsIterator){
+                    console.log('prediction steps to go = '+ stepsIterator);
+                    console.log(JSON.stringify(g_Player.rotation) + ' ' +JSON.stringify(g_Player.position) )
+                    scene.simulate(step,1);
+
+                    stepsIterator -= 1
+
+                } {console.log('prediction -- no simulation')}
+                //  console.log('ts_client ' +g_PlayerObject.userData.ts_client +' after '+ JSON.stringify(g_PlayerObject.rotation )+ ' last c delta ' + g_Player.last_client_delta+  ' ts_server '+ g_PlayerObject.userData.ts_server)
+                // physijs
+                // console.log(delta*60)
+
+            }while ( 0 < stepsIterator);
+*/
+         //   g_timeReminder += delta; // add phy delta
+
+////////////////////////
+
+            predictPlayer([g_PlayerObject], delta)
+            var step = 1/10;
+
+            var numberSteps = Math.floor(g_timeReminder/step) // number of steps
+            scene.setFixedTimeStep(step);
+            var s = 0
+            for (s; s < numberSteps; s++ ){
+
+                console.log('step = '+ (s+1));
+                console.log(JSON.stringify(g_Player.rotation) + ' ' +JSON.stringify(g_Player.position) )
+                scene.simulate(step,1);
+            }
+/////////////////////////
+            /*
+        //    var isPredRun = true;
+            var step = 1/10;
+            scene.setFixedTimeStep(step);
+            var numberSteps = Math.floor(g_timeReminder/step) // number of steps
+            var tempNumberSteps = numberSteps;
+            while (true) {
+                if (tempNumberSteps == 0) {
+                    predictPlayer([g_PlayerObject], delta)
+                    break;
+
+                } else if (tempNumberSteps > 0) {
+                    tempNumberSteps -= 1; //decrease remained physics update count
+                    var d = Math.min(delta, step);
+                    delta -= d;
+                    predictPlayer([g_PlayerObject], d)
+
+
+
+
+                }
+            }
+            */
+/*
+            scene.setFixedTimeStep(step);
+            var s = 0
+            for (s; s < numberSteps; s++ ){
+
+                console.log('step = '+ (s+1));
+                console.log(JSON.stringify(g_Player.rotation) + ' ' +JSON.stringify(g_Player.position) )
+                scene.simulate(step,1);
+            }
+            */
+            /////////////////////////////
+           // g_timeReminder -= step * numberSteps;
+
+ //        /   var step = 1/60;
+         //   scene.setFixedTimeStep(step);
+         //   scene.simulate(delta,5);
 
 
 
 
             //console.log(g_Player.position)
            // console.log(g_Player.rotation)
+            //state is updated after prediction
+            var predictedState = JSON.parse(JSON.stringify([g_Player.ts_client, g_Player.keyState, g_Player.mouseState, g_Player.mouse2D, g_Player.ts_server, g_Player.last_client_delta, g_Player.position, g_Player.rotation, g_Player.isCameraFollow, g_Player.serverLastSentTime,g_Player.mixerTime, numberSteps,g_timeReminder]));
+            console.log('ts_client '+predictedState[0] + ' rotation '+ JSON.stringify(predictedState[7]) + ' keyState' + JSON.stringify(predictedState[1]));
+
+            g_Pending_input.unshift(predictedState);
 
             //  console.log('AFTER SERVER/PREDICT/RECONCILE '+isServerUpdate+' '+isPrediction+' '+isReconciliation+ ' '+ g_Player.ts_client +' ' + JSON.stringify(g_Player));
-        }
+        };
+        g_timeReminder -= step * numberSteps;
 
         // console.log('g_Player: '+g_Player.ts_client + ' ')
         //save input for further reconcilation
-        g_Pending_input.push(state);
+
         //if (g_Pending_input.length > 20) g_Pending_input.shift();
 
         // console.log(g_Pending_input.length);
