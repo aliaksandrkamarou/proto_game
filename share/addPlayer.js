@@ -21,30 +21,32 @@
 
 function addPlayer (data, geometryTemplate, materialTemplate, scene, objects, players, isPhysics) {
 
-
+/*
     var material = new THREE.MeshPhongMaterial({
         color: 0xffffff,
         morphTargets: true,
         vertexColors: THREE.FaceColors,
         shading: THREE.FlatShading
     });
-
- //   var material = new THREE.MultiMaterial( materialTemplate);
+*/
+    var material = new THREE.MultiMaterial( materialTemplate);
 
 
    // var pMaterial = new Physijs.
 
 
-    // geometryTemplate.scale(2,2,2);
+     //geometryTemplate.scale(2,2,2);
+     //geometryTemplate.center();
     // geometryTemplate.verticesNeedUpdate = true;
 
     //  geometryTemplate.scale(.02,.02,.02);
-   var pMaterial  = Physijs.createMaterial(material, 0.01,0.01);
+   var pMaterial  = Physijs.createMaterial(material, 0.1,0.1);
 
 
     //   var playerMesh =   new THREE.Mesh(geometryTemplate, material);//new physijs.Convex(geometryTemplate, material) //  ;//  //
-    var playerMesh = isPhysics ? new Physijs.CapsuleMesh(geometryTemplate, pMaterial/* , 1*/): new THREE.Mesh(geometryTemplate, material);
-
+   // var playerMesh = isPhysics ? new Physijs.CapsuleMesh(geometryTemplate, pMaterial/* , 1*/): new THREE.SkinnedMesh(geometryTemplate, material);
+   // var playerMesh =  new THREE.SkinnedMesh(geometryTemplate, material);
+    var playerMesh =  new Physijs.SkinnedBoxMesh(geometryTemplate, material);
 
 
     playerMesh.addEventListener( 'collision', function( other_object, linear_velocity, angular_velocity ) {
@@ -52,7 +54,7 @@ function addPlayer (data, geometryTemplate, materialTemplate, scene, objects, pl
         console.log('COLLISION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 
         this.setLinearVelocity({x:0,y:0,z:0});  // checkkeystates + updateone player
-      //  other_object.setLinearVelocity({x:0,y:0,z:0});
+        other_object.setLinearVelocity({x:0,y:0,z:0});
         console.log(this.playerId);
 
 
@@ -94,6 +96,15 @@ function addPlayer (data, geometryTemplate, materialTemplate, scene, objects, pl
             }
 
         },
+        'backTime': {
+            get: function () {
+                return playerMesh.actions.back.time;
+            },
+            set: function (val) {
+                playerMesh.actions.back.time = val;
+            }
+
+        },
         'attackTime': {
             get: function () {
                 return playerMesh.actions.attack.time;
@@ -102,7 +113,7 @@ function addPlayer (data, geometryTemplate, materialTemplate, scene, objects, pl
                 playerMesh.actions.attack.time = val;
             }
 
-        },
+        }/*,
         'waveTime': {
             get: function () {
                 return playerMesh.actions.wave.time;
@@ -111,7 +122,7 @@ function addPlayer (data, geometryTemplate, materialTemplate, scene, objects, pl
                 playerMesh.actions.wave.time = val;
             }
 
-        }
+        }*/
 
     });
 
@@ -171,14 +182,58 @@ function addPlayer (data, geometryTemplate, materialTemplate, scene, objects, pl
      //  console.log(bbox);
 
      */
+/*
+    var cubeGeometry = new THREE.BoxGeometry(.5, 1,.5 );
+    var cubeMaterial = new THREE.MeshBasicMaterial( {color: 0x00ff00} );
+    cubeMaterial.transparent = true;
+    cubeMaterial.opacity = 0.5;
 
-    var axisHelper = new THREE.AxisHelper( 50 );
-   // playerMesh.add(axisHelper);
-    scene.add(playerMesh);
+   var cube =  new THREE.SkinnedMesh( cubeGeometry, cubeMaterial);
+    cube.__dirtyPosition = true;
+    cube.__dirtyRotation = true;
+    cube.position.copy(playerMesh.position);
+    cube.rotation.copy( playerMesh.rotation);
+    cube.name = 'greenCube';
+*/
+    scene.add(playerMesh)
+
+  //  scene.add(cube);
+
+
+
+    var hex  = 0xff0000;
+
+
+ //   var bbox = new THREE.BoundingBoxHelper( playerMesh, hex );
+ //   bbox.update();
+
+  //  var diff_mesh_bbox = playerMesh.position.clone().sub(bbox.position);
+ //   bbox.geometry.translate(diff_mesh_bbox.x,diff_mesh_bbox.y,diff_mesh_bbox.z)
+ //   bbox.update();
+
+   // playerMesh.add( bbox );
+    //scene.add(cube);
+   // var playerController =
+
+    var axisHelper = new THREE.AxisHelper( 5 );
+    //playerMesh.add(axisHelper);
+  //  scene.add(playerMesh);
+    playerMesh.inputStates = [];
     objects.push(playerMesh);
     players.push(player);
-    playerMesh.setLinearFactor(new THREE.Vector3(1,1,1));
+
+
+
+
+
+
+  //  playerMesh.setLinearFactor(new THREE.Vector3(1,0,1));
     playerMesh.setAngularFactor(new THREE.Vector3(0,0,0));
+  //  playerMesh.setLinearVelocity({x: playerMesh.userData.turnSpeed * playerMesh.userData.r * Math.sin(playerMesh.userData.rotation.y), y:playerMesh._physijs.linearVelocity.y, z: playerMesh.userData.turnSpeed * playerMesh.userData.r  * Math.cos(playerMesh.userData.rotation.y)} )
+    //playerMesh.setAngularVelocity({x: playerMesh._physijs.angularVelocity.x, y: playerMesh.userData.turnSpeed*2, z: playerMesh._physijs.angularVelocity.z} )
+
+
+
     //   scene.add( bbox );
    // playerMesh.rotation.y = Math.atan2(10,50);
     //console.log('rotation !!!!!!!!!!!!!!!!!!!!!!!'+playerMesh.rotation.y);

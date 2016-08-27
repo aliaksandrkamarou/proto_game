@@ -38,15 +38,15 @@
 
     if (intersects.length > 0) {
         if (INTERSECTED != intersects[0].object) {
-            if (INTERSECTED) INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex);
+         //   if (INTERSECTED) INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex);
             INTERSECTED = intersects[0].object;
-            INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex(); // TODO: get rid of currentHex it -- it looks artificial
-            INTERSECTED.material.emissive.setHex(0xff0000);
+         //   INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex(); // TODO: get rid of currentHex it -- it looks artificial
+         //   INTERSECTED.material.emissive.setHex(0xff0000);
 
             player.intersected_scene_id = INTERSECTED.id; // got new id back
         }
     } else {
-        if (INTERSECTED) INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex);
+      //  if (INTERSECTED) INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex);
         INTERSECTED = null;
     }
 

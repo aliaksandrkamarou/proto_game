@@ -23,8 +23,8 @@ function cameraControl (player) {
 
 
 
-    camera.position.x =  player.position.x + player.userData.playerCameraDist.distance *  (Math.cos( player.rotation.y ));
-    camera.position.z =  player.position.z  - player.userData.playerCameraDist.distance * Math.sin( player.rotation.y  );
+    camera.position.x =  player.position.x + player.userData.playerCameraDist.distance *  (Math.sin( player.rotation.y + Math.PI ));
+    camera.position.z =  player.position.z  + player.userData.playerCameraDist.distance * Math.cos( player.rotation.y  + Math.PI);
 
    // console.log('roy y '+player.rotation.y + 'cos y ' + Math.cos( (player.rotation.y)  ) + 'sin y '+  Math.sin( player.rotation.y  ) )
 
