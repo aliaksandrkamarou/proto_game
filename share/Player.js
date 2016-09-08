@@ -24,11 +24,11 @@
 
 
         this.position = mesh.position; // link
-        this.position.set(0, 3, 0); // set
+        this.position.set(0, 2, 0); // set
 
 
         this.rotation = mesh.rotation// new THREE.Euler();     // DO NOT LINK IT TO  mesh.rotation since scene.updateMatrixWorld() uses it somehow
-        this.rotation.set(0, 0, 0, 'YZX'); // set
+        this.rotation.set(0, 0, 0, 'YZX'); // YZX set
 
 
 
@@ -54,14 +54,15 @@
 
 
 //
-        this.keyState = {};
+        this.keyState = []//{};
         this.mouseState = {};
         this.moveSpeed = 100;
         this.turnSpeed = 1;
 
         this.moveState = {
 
-            hitOnce: false
+            hitOnce: false,
+            isRunning : false
         };
 
         this.mouse2D = new THREE.Vector2();
@@ -84,7 +85,7 @@
 
         };
 
-       // mesh.actions.stand.play();
+     //   mesh.actions.stand.play();
 
 
         // this.actions = {};
@@ -107,15 +108,17 @@
         this.pending_inputs = [];
 
         this.ts_client = 0;
-        this.ts_server = undefined;
+        this.ts_server = -1;
 
         this.last_client_delta = 0;
         mesh.phyDelayReminder = 0;
 
+
         this.serverLastSentTime = undefined;
         this.needServerUpdate = false;
 
-        this.ts_interpol = undefined;
+      //  this.ts_interpol = 0;
+        this.totalNumberSteps = 0;
 
         this.ts_render = undefined;
         this.ts = undefined;

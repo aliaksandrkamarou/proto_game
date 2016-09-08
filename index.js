@@ -7,6 +7,9 @@ var logger = require('morgan');
 var favicon = require('serve-favicon');
 var THREE = require('three');
 var fs = require('fs');
+
+
+
 var world = require('./server_app/server_world');
 //var async = require('async');
 var serverRenderer = require('./server_app/serverRenderer');
@@ -39,7 +42,7 @@ app.use('/Helpers',express.static(__dirname+'/Helpers'));
 
 app.use('/server_app',express.static(__dirname+'/server_app'));
 app.use('/share',express.static(__dirname+'/share'));
-
+app.use('/models',express.static(__dirname+'/models'));
 
 app.use('/PointerLockControl',express.static(__dirname+'/PointerLockControl'));
 //app.route(function(req,rea,next){
@@ -55,14 +58,21 @@ io.on('connection', function(socket){
 
   // CREATE NEW PLAYER on CLIENT
     var id = socket.id;  // assign player id as socket.id
-    var player = world.addPlayer(id);   // returns player + side effect(!) add player to players, so it can be retrived by world.playerForId
+    socket.playerId = id;  // костыль для addPlayer
+    var player = world.addPlayer(socket, world.geometryTemplate,world.multiMaterialTemplate, world.scene, world.objects, world.players, true);   // returns player + side effect(!) add player to players, so it can be retrived by world.playerForId
+
+   // world.postServerMessages.push (JSON.parse(JSON.stringify(player)));
+   // world.postServerMessages.push (player);
+   // world.postServerMessages.push (JSON.parse(JSON.stringify(player)));
 
     socket.emit('droid', world.jsonContent);
+
     //var player = world.playerForId(id); // get player's data by id
 
-    socket.emit('createPlayer', player);  // emit 'createPlayer' with player's data to client
+    socket.emit('createPlayer', JSON.parse(JSON.stringify(player)));  // emit 'createPlayer' with player's data to client
     console.log('create player emitted');
     console.log(player);
+
  //END OF CREATE NEW PLAYER on CLIENT
 
 
@@ -156,23 +166,39 @@ io.on('connection', function(socket){
 
     socket.on('playerState', function (state){
 
+
+
         counter += 1;
 
 
-     //   console.log('PLAYER STATE FIRED '+ JSON.stringify(process.hrtime()) +' counter '+ counter+ ' socket '+ socket.id + ' ts_client '+state[0])
-      //  if(counter > 4) throw /*new Error*/console.log( 'counter > 4  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+   //     if(/*world.isServerInterpolation*/ true) {
+
+            var playerMesh = world.objectForPID(socket.id)
+            playerMesh.inputStates.push(state);
+        console.log(state[9])
+
+     //   } else {
 
 
-        player.ts_client = state[0];
-        player.keyState = state[1];
-        player.mouseState = state[2];
-        player.mouse2D =state[3];
-        player.ts_server =state[4];
-        player.last_client_delta = state[5]; // never used. saved on client side for client reconciliation
-        //DO NOT UNCOMMENT -- update DUPLICATION player.position.set(state[6].x,state[6].y,state[6].z)
-        //DO NOT UNCOMMENT -- player.rotation.set(state[7].x,state[7].y,state[7].z)
-        player.isCameraFollow = state[8]
-        player.needServerUpdate = true;
+
+            //   console.log('PLAYER STATE FIRED '+ JSON.stringify(process.hrtime()) +' counter '+ counter+ ' socket '+ socket.id + ' ts_client '+state[0])
+            //  if(counter > 4) throw /*new Error*/console.log( 'counter > 4  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+
+
+       /*     player.ts_client = state[0];
+            player.keyState = state[1];
+            player.mouseState = state[2];
+            player.mouse2D = state[3];
+            player.ts_server = state[4];
+            player.last_client_delta = state[5]; // never used. saved on client side for client reconciliation
+            //DO NOT UNCOMMENT -- update DUPLICATION player.position.set(state[6].x,state[6].y,state[6].z)
+            //DO NOT UNCOMMENT -- player.rotation.set(state[7].x,state[7].y,state[7].z)
+            player.isCameraFollow = state[8]
+            player.needServerUpdate = true;
+            */
+     //   }
+
+      //  player.states.push(state);  //states from client
 
     })
 
@@ -198,7 +224,7 @@ io.on('connection', function(socket){
 
         console.log('acpect :'+ player.camera.aspect+ 'for player id'+ id)
 
-    })
+    });
 
 /*
     socket.on('rAF update from Client', function(){
@@ -217,7 +243,7 @@ io.on('connection', function(socket){
     socket.on('disconnect', function(){
         console.log('user disconnected '+ id);});
 
-
+/*
     socket.on('UPD_world_CLI', function(ps,cb){
 
         console.log('rAF fired ' + ps)
@@ -225,10 +251,10 @@ io.on('connection', function(socket){
 
         cb([world.players,g_lastTick,ps])
     } )
+*/
 
 
-
-
+/*
 
     socket.on('giveMeData', function (data) {
             console.log('data request');
@@ -289,9 +315,10 @@ io.on('connection', function(socket){
             // console.log(JSON.stringify(scene));
 
         }
+
     );
 
-
+*/
 
 
 
@@ -311,6 +338,8 @@ io.on('connection', function(socket){
 var clock = new THREE.Clock;
 var g_delta;
 var g_lastTick;
+var serverLastUpdateTime
+
 //clock.start();
 //var time = clock.getElapsedTime ()//process.hrtime();
 var it = 0
@@ -448,7 +477,8 @@ setInterval(function anon(){
     console.log('call')
     world.scene.simulate()},100);
 */
-
+var g_timeReminder = 0;
+var simulateDeltaTime = 1/10;
 function looper () {
  //   console.time('up')
 
@@ -464,6 +494,11 @@ function looper () {
 
     var delta = clock.getDelta(); //call order is important here 1.// side-effect update clock.elapsedTime
   //  console.log(delta);
+   // if(delta > simulateDeltaTime) throw new Error('error: delta > simulateDeltaTime :  '+delta +' > '+ simulateDeltaTime );
+    g_timeReminder += delta;
+
+
+  //  console.log(delta);
     // call after getDelta() is important.
     //console.log('11111     '+clock.elapsedTime)
 
@@ -471,21 +506,32 @@ function looper () {
 
 
 
-    world.scene.setFixedTimeStep(delta);
-    world.scene.simulate(delta);
+
    // world.scene.updateMatrixWorld();
   //  console.log(delta);
 
- // console.log('looper');
+//  console.log('looper' + g_timeReminder +'vs'+ simulateDeltaTime);
 
-    world.renderPlayers(world.objects, delta); // call order is important is here 2.
+    //world.renderPlayers(world.objects, delta, clock.elapsedTime); // call order is important is here 2.
 
+    if (g_timeReminder >= simulateDeltaTime) {
+     //   console.log('g_timeReminder ' + g_timeReminder)
+        //console.log('simulate')
+        world.renderPlayers(world.objects, simulateDeltaTime, clock.elapsedTime);
+        world.scene.setFixedTimeStep(simulateDeltaTime );
+        world.scene.simulate(simulateDeltaTime , 1);
+        g_timeReminder -= simulateDeltaTime;
+    }
  //   console.log('g_delta   '+g_delta+'  delta '+delta+ ' g_lasttick  '+g_lastTick+ '22222     '+clock.elapsedTime)
     g_delta = delta;
-    g_lastTick = clock.elapsedTime;// copy primitive //call order is important here 3. // call after getDelta() is important. + call after render is important
+   // console.log(g_delta)
+ //   g_serverLastUpdateTime = clock.elapsedTime;
+    serverLastUpdateTime = clock.elapsedTime;// copy primitive //call order is important here 3. // call after getDelta() is important. + call after render is important
+    //console.log(serverLastUpdateTime)
 //    activeHandles.print();
  //   console.log('delta ' + delta + ' lastTick ' + lastTick);
    // blocker(10);
+ //  if (world.scene.getObjectByName('greenCube'))  console.log(world.scene.getObjectByName('greenCube').position);
  //   var players = world.players;
  //   log()
   //     io.emit('updateWorld', [players,delta]) /// EMIT TO ALL  // IS IT SYNC?????????
@@ -532,10 +578,17 @@ phy();
 */
 
 
-
+var clockEmitter = new THREE.Clock();
 setInterval(function sendUpdateToClient(){
+
     var ptime =  process.hrtime(); // hack
-    var ps = (ptime[0]+  1e-9 * ptime[1])
+    var serverLastSentTime = (ptime[0]+  1e-9 * ptime[1])
+
+    world.serverSentTimes.shift(); // length filled during initialization
+    world.serverSentTimes.push(serverLastSentTime);
+ //   console.log(world.serverSentTimes.length);
+
+    //console.log(serverLastSentTime);
 
 
 
@@ -557,7 +610,23 @@ setInterval(function sendUpdateToClient(){
    */
    // console.log(g_lastTick+" vs "+ ps)
    // if(world.players[0]) console.log(JSON.stringify(world.players[0]))
- //   console.log('rotation!!!!')
-  //  if (world.players[0]) console.log(world.players[0].rotation)
-   io.emit('outer_UPD_world_CLI', {players: world.players, lastTick:'legacy danger code' /*g_lastTick*/,ps: ps})
-},20)
+
+ //   var i ='hello';
+   if (world.postServerMessages.length > 0) {
+ //      console.log('post '+ world.postServerMessages[0].ts_client);
+       //   console.log('rotation!!!!')
+       //    var postServerMessagesCOPY = JSON.parse(JSON.stringify(world.postServerMessages))
+       // if (world.players[0]) console.log(world.players[0]._physijs)
+       //   if (world.postServerMessages[0]) { console.log( 'sending ' + JSON.stringify(world.postServerMessages[0].rotation) + ' for client_ts ' + world.postServerMessages[0].ts_client)};
+       io.emit('outer_UPD_world_CLI', {
+           players: world.postServerMessages,
+           serverLastUpdateTime: serverLastUpdateTime,
+           serverLastSentTime: serverLastSentTime
+       })
+       //    console.log('emit!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!;')
+
+       world.postServerMessages.length = 0; // clear existing array;
+   }
+ //   console.log('world.postServerMessages '+ world.postServerMessages.length)
+  // } else {console.log('!!!!!!!!!!NOT EMIT!')}
+},10)

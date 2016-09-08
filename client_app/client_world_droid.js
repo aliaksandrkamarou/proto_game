@@ -10,8 +10,10 @@ var players = [];
 var messageStack = [];
 
 var g_Pending_input = [];
-var g_Current_state = [];
-var g_Pending_server_hist = [];
+//var g_afterReconcilationState = {};
+var  g_Current_state = {};
+//var g_Temp_state = {keyState: {}};
+//var g_Pending_server_hist = [];
 var g_Ghosts = [];
 
 
@@ -224,7 +226,7 @@ function Player(mesh, id) {
     this.last_client_delta = 0;
     this.needServerUpdate = false;
 
-    this.ts_interpol = undefined;
+    this.ts_inte = undefined;
 
     this.ts_render = undefined;
 
@@ -337,8 +339,8 @@ function onKeyDown(event) {
     }
     ;
     if ((event.keyCode || event.which) == 79) {
-        isInterpolation = (!isInterpolation)
-        console.log('isInterpolation: ' + isInterpolation)
+        isInterPhysAnim = (!isInterPhysAnim)
+        console.log('isInterpolation: ' + isInterPhysAnim)
     }
     ;
 
@@ -351,8 +353,9 @@ function onKeyDown(event) {
 
     //event = event || window.event;
     g_Player.keyState[event.keyCode || event.which] = true;
+  //  g_Temp_state.keyState[event.keyCode || event.which] = true;
     // socket.emit('keydown',event.keyCode || event.which); // emit keyCode or which depending on browser
-    //  console.log('keydown emitted ' + event.keyCode || event.which);
+      console.log('keydown emitted ' + event.keyCode || event.which);
     //  console.log(event);
     ///
     //  document.removeEventListener('keydown',onKeyDown, false );
@@ -363,6 +366,7 @@ function onKeyDown(event) {
 
 function onKeyUp(event) {
     g_Player.keyState[event.keyCode || event.which] = false;
+   // g_Temp_state.keyState[event.keyCode || event.which] = false;
     //  socket.emit('keyup',event.keyCode || event.which); // emit keyCode or which depending on browser
     //  console.log('keyup emitted ' + event.keyCode || event.which);
     //  console.log(event);
@@ -406,13 +410,23 @@ var updateOnePlayer = function (playerData, ts) {
 
 
     var player = objectForPID(playerData.playerId);
+
+   // player.userData.serverLastSentTime = serverLastSentTime;
+
     if (player) {
+     //   player.userData.serverLastSentTime = serverLastSentTime;
+     //   if(player.userData.ts_server == playerData.ts_client){console.log('!!!!!SAME input??? '+JSON.stringify(player.userData.position) + ' vs '+JSON.stringify(playerData.position) + ' ts_client '+ playerData.ts_client);
+     //       if(player.playerId == g_Player.playerId){g_Player.needReconcilation = false} else{};
+
+     //       return;}
+
 
      //   console.log('dirty position ' + player.__dirtyPosition)
 
         player.__dirtyPosition = true; // for other players
         player.__dirtyRotation = true; // for other players
-  //      player.setLinearVelocity({x: 0, y:player._physijs.linearVelocity.y, z: 0} )  // + event listener + checkKeystates
+        player.setLinearVelocity({x:playerData._physijs.linearVelocity.x, y:playerData._physijs.linearVelocity.y, z:playerData._physijs.linearVelocity.z} )  // + event listener + checkKeystates
+        player.setAngularVelocity({x:playerData._physijs.angularVelocity.x, y:playerData._physijs.angularVelocity.y, z:playerData._physijs.angularVelocity.z} )
 
 
 
@@ -420,9 +434,9 @@ var updateOnePlayer = function (playerData, ts) {
 
 
 
-     //   player.userData.isCameraFollow = playerData.isCameraFollow;
-        player.userData.ts = ts;
-        player.userData.serverLastSentTime = serverLastSentTime;
+        //   player.userData.isCameraFollow = playerData.isCameraFollow;
+     //   player.userData.ts = ts;
+
         player.userData.ts_server = playerData.ts_client//serverLastUpdateTime//playerData.ts_server // last ts proceeded by server;
       //  player.userData.ts_client = playerData.ts_client // last ts proceeded by server;
         player.userData.keyState = playerData.keyState;
@@ -431,11 +445,13 @@ var updateOnePlayer = function (playerData, ts) {
 
         player.userData.last_client_delta = playerData.last_client_delta;
         player.position.set(playerData.position.x, playerData.position.y, playerData.position.z);
-        console.log(JSON.stringify(player.position));
+     //   console.log(JSON.stringify(player.position));
         //TODO: get rid of rotation it's re-linking HELL!
        // console.log('serv rot ' +JSON.stringify(playerData.rotation));
         //player.userData.rotation.set(playerData.rotation._x, playerData.rotation._y, playerData.rotation._z, playerData.rotation._order);
+
         player.userData.quaternion.set(playerData.quaternion._x,playerData.quaternion._y,playerData.quaternion._z,playerData.quaternion._w)
+     //   console.log(JSON.stringify(player.userData.quaternion))
 
         player.userData.timeReminder = playerData.timeReminder;
         player.userData.numberSteps = playerData.numberSteps;
@@ -444,17 +460,18 @@ var updateOnePlayer = function (playerData, ts) {
 
 
         //physijs
-         // player.setAngularVelocity(playerData._physijs.angularVelocity);
-        // player._physijs.height = playerData._physijs.height;
-        // player._physijs.id = playerData._physijs.id;
-         // player.setLinearVelocity( playerData._physijs.linearVelocity);
-        // player._physijs.mass = playerData._physijs.mass;
-        //player._physijs.position = playerData._physijs.position;
+
+       //   player.setAngularVelocity(playerData._physijs.angularVelocity);
+       //  player._physijs.height = playerData._physijs.height;
+       //  player._physijs.id = playerData._physijs.id;
+       //   player.setLinearVelocity( playerData._physijs.linearVelocity);
+       //  player._physijs.mass = playerData._physijs.mass;
+       // player._physijs.position = playerData._physijs.position;
        //   player._physijs.position = playerData.position ;// initial default
        //   player._physijs.rotation = playerData.quaternion;
-        // player._physijs.radius = playerData._physijs.rotation;
-        // player._physijs.touches = playerData._physijs.touches;
-        //  player._physijs.type = playerData._physijs.type;
+       //  player._physijs.radius = playerData._physijs.rotation;
+       //  player._physijs.touches = playerData._physijs.touches;
+       //   player._physijs.type = playerData._physijs.type;
 
       //   console.log(player.userData.quaternion);
        // console.log (player.rotation.constructor.name);
@@ -465,11 +482,38 @@ var updateOnePlayer = function (playerData, ts) {
        // player.actions.attack.play();
        // player.actions.wave.play();
 
+        //ANIM
+        //IDLE
+        (player.userData.keyState.some(function(el, idx, arr){
+            return el == true;
+        })) ? player.actions.stand.stop():player.actions.stand.play();
+
+
+        //FORFARD/BACKWARD
+
+        if
+        ((player.userData.keyState[38] || player.userData.keyState[87]) && !(player.userData.keyState[40] || player.userData.keyState[83])) {
+
+            player.actions.run.play();
+            player.actions.back.stop();
+
+        } else if (!(player.userData.keyState[38] || player.userData.keyState[87]) && (player.userData.keyState[40] || player.userData.keyState[83]))
+
+        // down arrow or 's' - move backward and NOT w -- forward
+        {
+            player.actions.run.stop();
+            player.actions.back.play();
+        }
+        else {
+            player.actions.back.stop();
+            player.actions.run.stop();
+        }
+        ;
 
 
 
-        (playerData.keyState[38] || playerData.keyState[87]) ? player.actions.run.play() :  player.actions.run.stop();
-        (playerData.keyState[40] || playerData.keyState[83]) ? player.actions.back.play() : player.actions.back.stop();
+    //    (playerData.keyState[38] || playerData.keyState[87]) ? player.actions.run.play() :  player.actions.run.stop();
+    //    (playerData.keyState[40] || playerData.keyState[83]) ? player.actions.back.play() : player.actions.back.stop();
 
         (playerData.mouseState[0]) ? player.actions.attack.play() : player.actions.attack.stop();
        // (playerData.keyState[70]) ? player.actions.wave.play() : player.actions.wave.stop();
@@ -500,7 +544,7 @@ var updateOnePlayer = function (playerData, ts) {
 
         if (player.actions.run.time != playerData.actions.runTime) {
             player.actions.run.time = playerData.actions.runTime;
-              console.log ('RUN TIME CHANGED');
+       //       console.log ('RUN TIME CHANGED');
         }
 
         if (player.actions.attack.time != playerData.actions.attackTime) {
@@ -513,22 +557,30 @@ var updateOnePlayer = function (playerData, ts) {
             player.actions.back.time = playerData.actions.backTime;
             //  console.log ('ATTACK TIME CHANGED'+ player.actions.attack.time +' ' + playerData.actions.attackTime);
         }
+        if (player.actions.stand.time != playerData.actions.standTime) {
+            //  console.log ('PRE ATTACK TIME CHANGED'+ player.actions.attack.time +' ' + playerData.actions.attackTime);
+            player.actions.stand.time = playerData.actions.standTime;
+            //  console.log ('ATTACK TIME CHANGED'+ player.actions.attack.time +' ' + playerData.actions.attackTime);
+        }
 /*
         if (player.actions.wave.time != playerData.actions.waveTime) {
             player.actions.wave.time = playerData.actions.waveTime;
             //  console.log ('WAVE TIME CHANGED');
         }
 */
-        player.mixer.update(0);
+        if(!isInterPhysAnim || player.playerId != g_Player.playerId) {player.mixer.update(0)};
 
 
         //player.__dirtyPosition = true; //physi.js
         //player.__dirtyRotation = true;
 
-        //player.setAngularVelocity(playerData._physijs.angularVelocity);
-        //player.setLinearVelocity( playerData._physijs.linearVelocity);
+       // player.setAngularVelocity(playerData._physijs.angularVelocity);
+       // player.setLinearVelocity( playerData._physijs.linearVelocity);
 
         if (player.playerId == g_Player.playerId) {
+
+
+            g_Player.needReconcilation = true;
 
             //TODO: make it simpler
             g_Player.camera = objectLoader.parse(playerData.cameraJSON);
@@ -537,15 +589,25 @@ var updateOnePlayer = function (playerData, ts) {
 
             //physijs
 
-          //  player.setAngularVelocity(playerData._physijs.angularVelocity);
+         //   player.setAngularVelocity(playerData._physijs.angularVelocity);
             // player._physijs.height = playerData._physijs.height;
             // player._physijs.id = playerData._physijs.id;
-          //  player.setLinearVelocity( playerData._physijs.linearVelocity);
+         //   player.setLinearVelocity( playerData._physijs.linearVelocity);
+
+        //    player.setAngularVelocity({x:0,y:0,z:0});
+
+        //    player.setLinearVelocity( {x:0,y:0,z:0});
             // player._physijs.mass = playerData._physijs.mass;
             // player._physijs.position = playerData._physijs.position;
             // player._physijs.radius = playerData._physijs.rotation;
             // player._physijs.touches = playerData._physijs.touches;
             //  player._physijs.type = playerData._physijs.type;
+
+        } else {
+
+         //   player.setAngularVelocity({x:0,y:0,z:0});
+
+         //   player.setLinearVelocity( {x:0,y:0,z:0});
 
         }
 
@@ -731,11 +793,12 @@ for (var i = 0; i < 100; i++) {
 
 
 //var isPhysics = false||true;
-var isPrediction = false || true;
+var isPrediction = false //|| true;
 var isServerUpdate = false || true;
 //var isAnim = false ||true;
-var isReconciliation = false ||true;
+var isReconciliation = false// ||true;
 var isInterpolation = false //|| true;
+var isInterPhysAnim = false// || true;
 
 var g_InterpolationMs = 1000;
 
@@ -994,14 +1057,48 @@ function animate(ts) {
 
     if (g_Player) {
 
+        // interpolation may change g_Player that will be saved in the pending_state, so we need to update to last pending state it.
+        if(isInterPhysAnim && g_Pending_input.length > 0){
+            // re-assign position and quat as it may be changed by interpolation
+            var lastPendind = g_Pending_input[0]
+            g_Player.position.copy(lastPendind[16]);
+            g_Player.quaternion.copy(lastPendind[15]);
+
+
+            // iterate over animations time
+            for (var prop in g_Player.actions) {
+                if( g_Player.actions.hasOwnProperty( prop ) ) {
+
+                    g_Player.actions[prop] = lastPendind[14][prop];
+
+                //    console.log("obj." + prop + " = " + g_Player.actions[prop]+ 'will be assigned ' + lastPendind[14][prop]);;
+                }
+            }
+            //g_PlayerObject.mixer.update(0)
+
+
+
+
+          //  g_PlayerObject.actions.run.time = lastPendind[14].runTime;
+        }
+
+
+
         //console.log(JSON.stringify(g_Player.scale))
+
+        // save current controller state as it will be changed by reconcilation
         g_Current_state = JSON.parse(JSON.stringify({
             keyState: g_Player.keyState,
             mouseState: g_Player.mouseState,
-            mouse2D: g_Player.mouse2D
+            mouse2D: g_Player.mouse2D,
+            moveState: g_Player.moveState
+            //position: g_Player.position,
+            //quaternion: g_Player.quaternion
         }))
+
+
     }
-    //console.log(JSON.stringify(g_Current_state.keyState));
+
 
 
 
@@ -1012,6 +1109,15 @@ function animate(ts) {
 
         var v_serverData = messageStack.shift();
 
+
+
+        v_serverData.players.forEach(function(player, i , arr){
+
+            updateOnePlayer(player);
+            //console.log('upd one plr done')
+
+        });
+
       //  g_lastTick = v_serverData.lastTick;
       //  g_Current_Client_time = g_lastTick;
 
@@ -1019,7 +1125,7 @@ function animate(ts) {
        // console.log('server time upd' + g_Current_Client_time);
 
 
-
+/*
         if (isInterpolation){ //TODO: switch on/off BUG?/  forEACH loop replace to While and Break / reconilation dependency
 
             ///handle my player
@@ -1038,7 +1144,7 @@ function animate(ts) {
             ///handle other players
            // g_Pending_server_hist.push(v_serverData); // push server data into stack
 
-
+*/
 
 /*
             //GET CHECKPOINT
@@ -1064,9 +1170,10 @@ function animate(ts) {
             });
 
 */
-
+/*
         } else {
-            v_serverData.players.forEach(function(player, i , arr){
+  */
+    /*        v_serverData.players.forEach(function(player, i , arr){
 
 
 
@@ -1076,9 +1183,9 @@ function animate(ts) {
 
 
             });
-                 g_Pending_server_hist = [];
-        }
-
+    //             g_Pending_server_hist = [];
+    //    }
+*/
 
 
 
@@ -1141,9 +1248,11 @@ function animate(ts) {
 
 
 
-        if (isReconciliation) {
-            //  g_Current_state = JSON.parse(JSON.stringify([g_Player.ts_client, g_Player.keyState, g_Player.mouseState, g_Player.mouse2D, g_Player.ts_server, g_Player.last_client_delta, g_Player.position,g_Player.rotation,g_Player.quaternion])); // mask out
+        if (isReconciliation && g_Player.needReconcilation) {
 
+            g_Player.needReconcilation = false; // not enter until flag set to true by updateOnePlayer;
+            //  g_Current_state = JSON.parse(JSON.stringify([g_Player.ts_client, g_Player.keyState, g_Player.mouseState, g_Player.mouse2D, g_Player.ts_server, g_Player.last_client_delta, g_Player.position,g_Player.rotation,g_Player.quaternion])); // mask out
+            if (g_Pending_input.length == 0) console.warn('g_Pending_input.length == 0')
             var i;
             for (i = g_Pending_input.length - 1; i>=0; i-- )
             {
@@ -1152,16 +1261,29 @@ function animate(ts) {
                 if (state[0] < g_Player.ts_server){
 
                     g_Pending_input.pop();
+                   // console.log('pop '+ state[0])
 
-                }else if (state[0] == g_Player.ts_server){
+                } else if (state[0] == g_Player.ts_server){
 
-                    console.log ('server delta pre: '+state[5] );
+/*
+                    g_PlayerObject.getLinearVelocity(); // update _physijs.linearVelocity
+
+                   // console.log ('server delta pre: '+state[5] );
                     console.log('reconcilation: keyState  client:  '+ JSON.stringify(g_Player.keyState) + ' Server '+ JSON.stringify(state[1]) + ' state[0] '+ state[0]) ;
                     (g_Player.position.x != state[6].x || g_Player.position.y != state[6].y || g_Player.position.z != state[6].z) ?  console.warn('reconcilation: position  does not match. Server: ' + JSON.stringify(g_Player.position) +'   Client:'+  JSON.stringify(state[6]) + ' ts_server ' +  g_Player.ts_server + ' state[0] '+ state[0] ) : console.log('!!!!!!!!!!!!position okay!!!!!!!!!!!! g_Player.position' + JSON.stringify(g_Player.position) + ' state[6] '+ JSON.stringify(state[6])) ;
                     if(g_Player.rotation.x != state[7]._x || g_Player.rotation.y != state[7]._y ||g_Player.rotation.z != state[7]._z || g_Player.rotation.order != state[7]._order) {
                         console.warn('reconcilation: rotation  does not match. Server: ' + JSON.stringify(g_Player.rotation) +'   Client:'+  JSON.stringify(state[7])  + ' ts_server ' +  g_Player.ts_server + ' state[0] '+ state[0]  )}
                     else {console.log('!!!!!!!!!!!!rotation okay!!!!!!!!!!!! g_Player.rotation' + JSON.stringify(g_Player.rotation) + ' state[7] '+ JSON.stringify(state[7]))} ;
 
+                    if(g_Player.quaternion.x != state[15].x || g_Player.quaternion.y != state[15].y ||g_Player.quaternion.z != state[15].z || g_Player.quaternion.w != state[15].w) {
+                        console.warn('reconcilation: Quaternion  does not match. Server: ' + JSON.stringify(g_Player.quaternion) +'   Client:'+  JSON.stringify(state[15])  + ' ts_server ' +  g_Player.ts_server + ' state[0] '+ state[0]  )}
+                    else {console.log('!!!!!!!!!!!!quaternion okay!!!!!!!!!!!! g_Player.rotation' + JSON.stringify(g_Player.quaternion) + ' state[7] '+ JSON.stringify(state[15]))} ;
+
+                    if(g_Player._physijs.linearVelocity.x != state[18].x || g_Player._physijs.linearVelocity.y != state[18].y ||g_Player._physijs.linearVelocity.z != state[18].z) {
+                        console.warn('reconcilation: ._physijs.linearVelocity  does not match. Server: ' + JSON.stringify(g_Player._physijs.linearVelocity) +'   Client:'+  JSON.stringify(state[18])  + ' ts_server ' +  g_Player.ts_server + ' state[0] '+ state[0]  )}
+                    else {console.log('!!!!!!!!!!!!._physijs.linearVelocity okay!!!!!!!!!!!! g_Player._physijs.linearVelocity' + JSON.stringify(g_Player._physijs.linearVelocity) + ' state[18] '+ JSON.stringify(state[18]))} ;
+
+*/
 
                 } else {
                     //   (g_Player.keyState != state[1]) ? console.log('reconcilation: keyState does not match. client:  '+ JSON.stringify(g_Player.keyState) + ' Server '+ JSON.stringify(state[1])) : null ;
@@ -1176,9 +1298,24 @@ function animate(ts) {
                     // (g_Player.rotation.x != state[7]._x || g_Player.rotation.y != state[7]._y ||g_Player.rotation.z != state[7]._z || g_Player.rotation.order != state[7]._order) ? console.log('reconcilation: rotation  does not match. Client: ' + JSON.stringify(g_Player.rotation) +'   Server:'+  JSON.stringify(state[7])  ) : console.log('!!!!!!!!!!!!rotation okay!!!!!!!!!!!!') ;
                     // g_Player.rotation.set(state[7]._x, state[7]._y, state[7]._z, state[7]._order)
                     // g_Player.isCameraFollow = state[8];
+////////////////////////////////
 
+
+                    var step = 1/10;
+                    var reconcilationNumberSteps = state[11];
+                    scene.setFixedTimeStep(step);
+                    var s = 0
+                    for (s; s < reconcilationNumberSteps; s++ ){
+             //           console.log('!!!!!!!!!!!!!!!!RECONCILE PHYSICSSSSSSSSSSS!!!!!!!!!!!!!!!!!!')
+                        predictPlayer([g_PlayerObject], step)
+
+               //         console.log('step = '+ (s+1));
+               //         console.log('BEFORE rot '+JSON.stringify(g_Player.quaternion) + ' pos ' +JSON.stringify(g_Player.position)+ 'keyState '+ JSON.stringify(g_Player.keyState) + ' ts_client '+  g_Player.ts_client)
+                        scene.simulate(step,1);
+               //         console.log('AFTER rot '+JSON.stringify(g_Player.quaternion) + ' pos ' +JSON.stringify(g_Player.position)+ 'keyState '+ JSON.stringify(g_Player.keyState) + ' ts_client '+  g_Player.ts_client)
+                    }
 /////////////////////////
-
+/*
                     predictPlayer([g_PlayerObject], g_Player.last_client_delta);
                     //physis
 
@@ -1194,7 +1331,7 @@ function animate(ts) {
                         console.log(JSON.stringify(g_Player.rotation) + ' ' +JSON.stringify(g_Player.position) )
                         scene.simulate(step,1);
                     }
-
+*/
 //////////////////////////////////////////////////////////
                     /*
                     var delta = state[5];
@@ -1253,6 +1390,18 @@ function animate(ts) {
                 }
 
             }
+
+
+
+          //  g_afterReconcilationState = JSON.parse(JSON.stringify({
+          //      position: g_Player.position,
+           //     quaternion: g_Player.quaternion
+
+           // }));
+
+
+
+
 
 /*
             g_Pending_input.forEach(function (state, i, arr) {
@@ -1336,7 +1485,7 @@ function animate(ts) {
 
 
         } else {
-            g_Pending_input = [];
+         //   g_Pending_input = [];
         }
         ;
 
@@ -1347,7 +1496,7 @@ function animate(ts) {
 
 
 
-        stats2.update();
+      //  stats2.update();
 
     }
 
@@ -1361,7 +1510,12 @@ function animate(ts) {
         var step = 1/10;
       //  var numberSteps = Math.min(Math.floor(g_timeReminder/step),5) // number of steps ; up to 5
         var numberSteps = Math.floor(g_timeReminder/step)
+
+
+
       //  var numberSteps = Math.ceil(g_timeReminder/step)
+
+       // if (numberSteps > 0){g_PlayerObject.userData.keyState = JSON.parse(JSON.stringify(g_Temp_state.keyState))}
 
        // if (delta < 1/60) console.warn('delta '+ delta);
 
@@ -1378,27 +1532,35 @@ function animate(ts) {
         //console.log('delta: '+delta);
         //console.log('ts delta: '+ (ts - g_Player.ts_client)) // we drop packets don't use it!!
 
-        g_Player.ts_client = ts;
+
+
+        g_Player.ts_client += delta//ts;
         g_Player.last_client_delta = delta;
-        g_Player.keyState = g_Current_state.keyState;
+        g_Player.totalNumberSteps += numberSteps;
+        g_Player.keyState =  g_Current_state.keyState;
         g_Player.mouseState = g_Current_state.mouseState;
         g_Player.mouse2D.set(g_Current_state.mouse2D.x, g_Current_state.mouse2D.y);
+        g_Player.moveState = g_Current_state.moveState;
 
 
-        console.log(g_Player.ts_client)
+      //  console.log(g_Player.ts_client)
 
 
         // send input to the serverawawawawawaw
         //COPY OBJECT
-        var sendState = JSON.parse(JSON.stringify([g_Player.ts_client, g_Player.keyState, g_Player.mouseState, g_Player.mouse2D, g_Player.ts_server, g_Player.last_client_delta, g_Player.position, g_Player.rotation, g_Player.isCameraFollow, g_Player.serverLastSentTime,g_Player.mixerTime, numberSteps,g_timeReminder]));
-      //  var state = [g_Player.ts_client, g_Player.keyState, g_Player.mouseState, g_Player.mouse2D, g_Player.ts_server, g_Player.last_client_delta, g_Player.position, g_Player.rotation, g_Player.isCameraFollow, g_Player.serverLastSentTime,g_Player.mixerTime];
-console.log(sendState[1])
-        //TODO: send one object instead of Array of objects;
-        socket.emit('playerState', sendState);
+      if(numberSteps>0) {
+
+          var sendState = JSON.parse(JSON.stringify([g_Player.ts_client, g_Player.keyState, g_Player.mouseState, g_Player.mouse2D, g_Player.ts_server, g_Player.last_client_delta, g_Player.position, /*g_Player.rotation*/, g_Player.isCameraFollow, /*g_Player.serverLastSentTime*/serverLastSentTime, g_Player.mixerTime, numberSteps, g_timeReminder,g_Player.totalNumberSteps]));
+       //   sendState[19] = JSON.parse(JSON.stringify(g_PlayerObject.moveState));
+          //  var state = [g_Player.ts_client, g_Player.keyState, g_Player.mouseState, g_Player.mouse2D, g_Player.ts_server, g_Player.last_client_delta, g_Player.position, g_Player.rotation, g_Player.isCameraFollow, g_Player.serverLastSentTime,g_Player.mixerTime];
+     //     console.log('key state ' + JSON.stringify(sendState[1]) + 'number of teps '+numberSteps)
+          //TODO: send one object instead of Array of objects;
+       //   console.log('sending ' + sendState[9])
+          socket.emit('playerState', sendState);
+      }
 
 
-
-
+/*
         if (isInterpolation ){
 
             var hist = g_Pending_server_hist.shift();
@@ -1419,7 +1581,7 @@ console.log(sendState[1])
                     if (frame) {
                         player.userData.pending_server_hist.push(frame);
                         //player.userData.ts_static = frame.ts_client
-                        //player.userData.ts_interpol = player.userData.ts_static;
+                        //player.userData.ts_inte = player.userData.ts_static;
                         // player.userData.ts_client = frame.ts_client;
                         //player.userData.ts_render = ts_client - g_InterpolationMs
                     }
@@ -1431,8 +1593,8 @@ console.log(sendState[1])
 
 
 
-              //  player.userData.ts_interpol = player.userData.ts_interpol + (delta*1000);
-              //  player.userData.ts_render = player.userData.ts_interpol - g_InterpolationMs;
+              //  player.userData.ts_inte = player.userData.ts_inte + (delta*1000);
+              //  player.userData.ts_render = player.userData.ts_inte - g_InterpolationMs;
 
 
            //     console.log( 'player.userData.local_timer '+ player.userData.local_timer  +' player.userData.ts_client ' + player.userData.ts_client +   ' player.userData.ts_render ' + player.userData.ts_render + ' delta ' + delta)
@@ -1520,7 +1682,7 @@ console.log(sendState[1])
 
 
         }
-
+*/
 
 
 
@@ -1564,7 +1726,9 @@ console.log(sendState[1])
          //   g_timeReminder += delta; // add phy delta
 
 ////////////////////////
+            /*
 
+            console.log('!!!!!!!!!!!!!!!!PREDICT ANIM!!!!!!!!!!!!!!!!!!')
             predictPlayer([g_PlayerObject], delta)
             var step = 1/10;
 
@@ -1572,11 +1736,116 @@ console.log(sendState[1])
             scene.setFixedTimeStep(step);
             var s = 0
             for (s; s < numberSteps; s++ ){
+                console.log('!!!!!!!!!!!!!!!!PREDICT PHYSICSSSSSSSSSSS!!!!!!!!!!!!!!!!!!')
 
                 console.log('step = '+ (s+1));
                 console.log(JSON.stringify(g_Player.rotation) + ' ' +JSON.stringify(g_Player.position) )
                 scene.simulate(step,1);
             }
+            //g_PlayerObject.updateMatrix();
+
+
+
+*/
+//////////////////////////////////
+           // console.log('!!!!!!!!!!!!!!!!PREDICT ANIM!!!!!!!!!!!!!!!!!!')
+          //  var numberSteps = Math.floor(g_timeReminder/step) // number of steps
+          //  predictPlayer([g_PlayerObject], delta)
+           // predictPlayer([g_PlayerObject], delta)
+         /*   if
+            (g_PlayerObject.userData.keyState[38] || g_PlayerObject.userData.keyState[87]) {
+                // up arrow or 'w' - move forward
+                g_PlayerObject.actions.run.play()
+                g_PlayerObject.position.x += delta * g_PlayerObject.userData.turnSpeed * g_PlayerObject.userData.r * Math.sin(g_PlayerObject.userData.rotation.y);  //DO NOT USE PLAYER.ROTATION ITS NOT LINKED!!!
+                g_PlayerObject.position.z += delta *  g_PlayerObject.userData.turnSpeed * g_PlayerObject.userData.r  * Math.cos(g_PlayerObject.userData.rotation.y);
+
+                //FOR CORRECT Collision CALLBACK
+                //player.setLinearVelocity({x: player.userData.turnSpeed * player.userData.r * Math.sin(player.userData.rotation.y), y:player._physijs.linearVelocity.y, z: player.userData.turnSpeed * player.userData.r  * Math.cos(player.userData.rotation.y)} )
+                //player.applyCentralForce({x: - player.userData.turnSpeed * player.userData.r * Math.cos(player.userData.rotation.y)* player._physijs.mass, y:0, z: player.userData.turnSpeed * player.userData.r  * Math.sin(player.userData.rotation.y)* player._physijs.mass} )
+
+                g_PlayerObject.mixer.update(delta);
+
+
+
+            }
+
+*/
+            /*
+            predictPlayer([g_PlayerObject], delta)
+            scene.setFixedTimeStep(step);
+            scene.simulate(delta, 5)
+            */
+            if (numberSteps > 0) {
+
+            //    var recPos =  g_afterReconcilationState.position ;// || g_Player.position
+            //    var recQuat =  g_afterReconcilationState.quaternion;
+            //    console.log('recPos ' + JSON.stringify(recPos));
+            //    console.log('recQuat ' + JSON.stringify(recQuat));
+
+
+            //    g_Player.position.set (recPos._x,recPos._y,recPos._z);
+            //    g_Player.quaternion.set(recQuat._x,recQuat._y,recQuat._z,recQuat._w)
+            }
+
+
+
+
+            scene.setFixedTimeStep(step);
+            var s = 0
+            for (s; s < numberSteps; s++ ){
+            //    console.log('!!!!!!!!!!!!!!!!PREDICT PHYSICSSSSSSSSSSS!!!!!!!!!!!!!!!!!!')
+
+
+              //  g_Player.position.set(g_Current_state.position._x,g_Current_state.position._y,g_Current_state.position._z)
+
+                predictPlayer([g_PlayerObject], step)
+
+               // g_PlayerObject.__dirtyPosition = false;
+               // g_PlayerObject.__dirtyRotation = false;
+
+
+            //    console.log('step = '+ (s+1));
+            //    console.log('BEFORE PRED '+ JSON.stringify(g_Player.quaternion) + ' ' +JSON.stringify(g_Player.position) )
+                scene.simulate(step,1);
+             //   console.log('AFTER PRED ' +JSON.stringify(g_Player.quaternion) + ' ' +JSON.stringify(g_Player.position) )
+            }
+
+
+
+
+
+
+
+
+
+
+
+
+
+               // var step = 1//10;
+/*
+            if (numberSteps> 0) {
+                //  console.log(JSON.stringify(g_PlayerObject.userData.keyState))
+                predictPlayer([g_PlayerObject], (g_timeReminder - step * numberSteps));
+                scene.simulate(delta, 0);
+                g_timeReminder = 0;
+            }
+            */
+/*
+            var numberSteps = Math.floor(g_timeReminder/step) // number of steps
+            scene.setFixedTimeStep(step);
+            var s = 0
+            for (s; s < numberSteps; s++ ){
+                console.log('!!!!!!!!!!!!!!!!PREDICT PHYSICSSSSSSSSSSS!!!!!!!!!!!!!!!!!!')
+                predictPlayer([g_PlayerObject], step)
+
+                console.log('step = '+ (s+1));
+                console.log(JSON.stringify(g_Player.rotation) + ' ' +JSON.stringify(g_Player.position) )
+                scene.simulate(step,1);
+            }
+*/
+
+
 /////////////////////////
             /*
         //    var isPredRun = true;
@@ -1612,7 +1881,7 @@ console.log(sendState[1])
             }
             */
             /////////////////////////////
-           // g_timeReminder -= step * numberSteps;
+       //     g_timeReminder -= step * numberSteps;
 
  //        /   var step = 1/60;
          //   scene.setFixedTimeStep(step);
@@ -1624,14 +1893,177 @@ console.log(sendState[1])
             //console.log(g_Player.position)
            // console.log(g_Player.rotation)
             //state is updated after prediction
-            var predictedState = JSON.parse(JSON.stringify([g_Player.ts_client, g_Player.keyState, g_Player.mouseState, g_Player.mouse2D, g_Player.ts_server, g_Player.last_client_delta, g_Player.position, g_Player.rotation, g_Player.isCameraFollow, g_Player.serverLastSentTime,g_Player.mixerTime, numberSteps,g_timeReminder]));
-            console.log('ts_client '+predictedState[0] + ' rotation '+ JSON.stringify(predictedState[7]) + ' keyState' + JSON.stringify(predictedState[1]));
+            if (numberSteps > 0) {
+                //TODO: refactor this super long array
 
-            g_Pending_input.unshift(predictedState);
+
+                var predictedState = JSON.parse(JSON.stringify([g_Player.ts_client, g_Player.keyState, g_Player.mouseState, g_Player.mouse2D, g_Player.ts_server, g_Player.last_client_delta, g_Player.position, g_Player.rotation, g_Player.isCameraFollow, g_Player.serverLastSentTime, g_Player.mixerTime, numberSteps, g_timeReminder,g_Player.totalNumberSteps, g_Player.actions/*[14]*//*,g_Player.quaternion*//*15*/]));
+                predictedState.push(g_Player.quaternion.clone()/* el 15*/,g_Player.position.clone()/* el 16*/)
+                predictedState.concat(JSON.parse(JSON.stringify([g_PlayerObject.getAngularVelocity()/*el 17*/, g_PlayerObject.getLinearVelocity()/* el 18*/,g_PlayerObject.userData.moveState/* el 19*/])));
+
+
+                //      console.log('ts_client ' + predictedState[0] + ' rotation ' + JSON.stringify(predictedState[7]) + ' position ' + JSON.stringify(predictedState[6]) + ' keyState' + JSON.stringify(predictedState[1]));
+                g_Pending_input.unshift(predictedState);
+
+
+            }
+
+
+
+            if (isInterPhysAnim && g_Pending_input.length > 0){
+
+
+                var state0 = g_Pending_input[1]||[/*g_Player.ts_client*/0, /*g_Player.keyState*/{}, /*g_Player.mouseState*/{}, /*g_Player.mouse2D*/new THREE.Vector2(), /*g_Player.ts_server*/ undefined, /*g_Player.last_client_delta*/0,/* g_Player.position*/new THREE.Vector3(0,3,0), /*g_Player.rotation*/new THREE.Euler(0, 0, 0, 'YZX'), /*g_Player.isCameraFollow*/ false, /*g_Player.serverLastSentTime*/ undefined, /*g_Player.mixerTime*/ 0, /*numberSteps*/undefined, /*g_timeReminder*/undefined, 0, g_Player.actions/*[14]*//*,g_Player.quaternion*//*15*/,{x:0,y:0,z:0,w:0},{x:0,y:0,z:0}];
+                var state1 = g_Pending_input[0];
+
+
+                var end = state1[13]*step;
+                var start =  state0[13]*step;
+
+
+                var renderTime = g_Player.ts_client - step;
+
+                var alpha = (renderTime - start)/(end-start)
+
+               // console.log('InterPhysAnim');
+               // console.log(['start ',start, ' renderTime ',renderTime,' end ',end]);
+
+
+               // var alpha = delta/diff
+                // TODO: What about reconcilation whith the same ts_server and message drops
+
+              //  var t0 = state0[16].clone();
+              //  var t1 = state1[16].clone();
+
+
+
+                //position lerp
+          //      console.log('InterPhysAnim');
+                g_Player.position.lerpVectors(/*{x:0, y:0,z:0,_x:0,_y:0,_z:0}*/state0[16]/*t0*/,/*t1*//*{x:0, y:0,z:0,_x:0,_y:0,_z:0}*/state1[16], alpha )
+                THREE.Quaternion.slerp( state0[15], state1[15], g_PlayerObject.quaternion, alpha );
+          //      console.log(state0.length)
+          //      console.log (['state0[15] instanceof THREE.Quaternion ', state0[15] instanceof THREE.Quaternion, JSON.stringify(state0[15]), JSON.stringify(state1[15]), JSON.stringify(g_PlayerObject.quaternion), alpha])
+
+                // animation time lerp;
+
+                /*
+                for (var property in g_PlayerObject.actions) {
+                    if (g_PlayerObject.actions.hasOwnProperty(property)) {
+
+                        // do stuff
+
+
+                    }
+                }
+                */
+              //  var duration =  g_PlayerObject.actions.run._clip.duration
+
+                //g_PlayerObject.actions.run.time = state0[14].runTime //= (1-alpha) * state0[14].runTime + alpha* state1[14].runTime;
+               // g_Player.actions.runTime = state0[14].runTime
+
+
+
+                //iterate over animations time
+
+                for (var prop in g_Player.actions) {
+                    if( g_Player.actions.hasOwnProperty( prop ) ) {
+
+                        g_Player.actions[prop] = state0[14][prop];
+
+                   //     console.log("obj." + prop + " = " + g_Player.actions[prop]+ 'will be assigned ' + state0[14][prop]);;
+                    }
+                }
+
+                g_PlayerObject.mixer.update(renderTime - start);
+
+
+
+          //      console.log(['start pos ',JSON.stringify(state0[6]),  ' renderPos ',JSON.stringify(g_Player.position),' end ',state1[6]]);
+
+                cameraControl(g_PlayerObject);
+
+               // g_Player.rotation.lerpVectors(state0[7],state1[7], alpha)
+
+
+
+
+
+
+
+
+
+
+               // g_Player.ts_interpol += delta;
+
+
+                // ?  Number.MAX_VALUE
+
+
+                //  [g_Player.ts_client, g_Player.keyState, g_Player.mouseState, g_Player.mouse2D, g_Player.ts_server, g_Player.last_client_delta, g_Player.position, g_Player.rotation, g_Player.isCameraFollow, g_Player.serverLastSentTime, g_Player.mixerTime, numberSteps, g_timeReminder];
+
+                //g_Player.keyState = state0[1];
+                //g_Player.mouseState = state0[2];
+                //g_Player.mouse2D.set(state0[3].x, state0[3].y);
+                //   g_Player.ts_server = state[4];
+                // (g_Player.last_client_delta != state[5]) ? console.log('reconcilation: last_client_delta  does not match. Client: '+ g_Player.last_client_delta +'   Server: ' + state[5] ) : null ;
+                //g_Player.last_client_delta = state0[5];
+
+               // g_Player.position.lerp(state)
+
+               // (1-t)*state0[] + t * state1;
+
+
+
+            }
+
+
+
+
+/*
+
+            if (numberSteps >0 ) {
+                var d = g_timeReminder - step * numberSteps
+
+                if
+                (g_PlayerObject.userData.keyState[38] || g_PlayerObject.userData.keyState[87]) {
+                    // up arrow or 'w' - move forward
+                    g_PlayerObject.actions.run.play()
+                    g_PlayerObject.position.x += d * g_PlayerObject.userData.turnSpeed * g_PlayerObject.userData.r * Math.sin(g_PlayerObject.userData.rotation.y);  //DO NOT USE PLAYER.ROTATION ITS NOT LINKED!!!
+                    g_PlayerObject.position.z += d * g_PlayerObject.userData.turnSpeed * g_PlayerObject.userData.r * Math.cos(g_PlayerObject.userData.rotation.y);
+
+                    //FOR CORRECT Collision CALLBACK
+                    // player.setLinearVelocity({x: player.userData.turnSpeed * player.userData.r * Math.sin(player.userData.rotation.y), y:player._physijs.linearVelocity.y, z: player.userData.turnSpeed * player.userData.r  * Math.cos(player.userData.rotation.y)} )
+                    //player.applyCentralForce({x: - player.userData.turnSpeed * player.userData.r * Math.cos(player.userData.rotation.y)* player._physijs.mass, y:0, z: player.userData.turnSpeed * player.userData.r  * Math.sin(player.userData.rotation.y)* player._physijs.mass} )
+
+
+                }
+            }
+*/
+
+
+
+          //  if (delta >= )
+
+
+//refine
+           // predictPlayer([g_PlayerObject], (delta-step * numberSteps))
+         //   scene.simulate(Math.abs(delta-step * numberSteps) , 0)
+//end refine
+
+        //    var refiner = ( step * numberSteps - delta);
+
+        //    if (refiner > 0 )scene.simulate(refiner,0);
 
             //  console.log('AFTER SERVER/PREDICT/RECONCILE '+isServerUpdate+' '+isPrediction+' '+isReconciliation+ ' '+ g_Player.ts_client +' ' + JSON.stringify(g_Player));
         };
         g_timeReminder -= step * numberSteps;
+
+
+   //      scene.simulate(Math.max(-g_timeReminder+delta),0)
+
+
+
+
 
         // console.log('g_Player: '+g_Player.ts_client + ' ')
         //save input for further reconcilation
@@ -1644,7 +2076,7 @@ console.log(sendState[1])
     // g_Player.pending_input = (JSON.parse(JSON.stringify(g_Player)))
 
 
-    stats.update();
+   // stats.update();
 
 
     //console.log(camera.aspect)

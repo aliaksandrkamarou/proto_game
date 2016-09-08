@@ -19,7 +19,7 @@
 
 
 
-function addPlayer (data, geometryTemplate, materialTemplate, scene, objects, players, isPhysics) {
+function addPlayer (data, geometryTemplate, materialTemplate, scene, objects, players, isPhysics, deactivate) {
 
 /*
     var material = new THREE.MeshPhongMaterial({
@@ -44,18 +44,21 @@ function addPlayer (data, geometryTemplate, materialTemplate, scene, objects, pl
 
 
     //   var playerMesh =   new THREE.Mesh(geometryTemplate, material);//new physijs.Convex(geometryTemplate, material) //  ;//  //
-   // var playerMesh = isPhysics ? new Physijs.CapsuleMesh(geometryTemplate, pMaterial/* , 1*/): new THREE.SkinnedMesh(geometryTemplate, material);
+    var playerMesh = isPhysics ? new Physijs.SkinnedBoxMesh(geometryTemplate, material/* , 1*/):  new Physijs.SkinnedBoxMesh(geometryTemplate, material,0/* , 1*/)//new THREE.SkinnedMesh(geometryTemplate, material);
    // var playerMesh =  new THREE.SkinnedMesh(geometryTemplate, material);
-    var playerMesh =  new Physijs.SkinnedBoxMesh(geometryTemplate, material);
+ //   var playerMesh =  new Physijs.SkinnedBoxMesh(geometryTemplate, material);
+   // if (deactivate) playerMesh._physijs.activation_state=5 // deactivate simulation
 
 
     playerMesh.addEventListener( 'collision', function( other_object, linear_velocity, angular_velocity ) {
 
         console.log('COLLISION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 
-        this.setLinearVelocity({x:0,y:0,z:0});  // checkkeystates + updateone player
-        other_object.setLinearVelocity({x:0,y:0,z:0});
-        console.log(this.playerId);
+  //      this.setLinearVelocity({x:0,y:0,z:0});
+  //      this.setAngularVelocity({x:0,y:0,z:0})// checkkeystates + updateone player
+  //      other_object.setLinearVelocity({x:0,y:0,z:0});
+  //      other_object.setAngularVelocity({x:0,y:0,z:0});
+    //    console.log(this.playerId);
 
 
         // `this` is the mesh with the event listener
@@ -227,7 +230,7 @@ function addPlayer (data, geometryTemplate, materialTemplate, scene, objects, pl
 
 
 
-  //  playerMesh.setLinearFactor(new THREE.Vector3(1,0,1));
+    //playerMesh.setLinearFactor(new THREE.Vector3(1,0,1));
     playerMesh.setAngularFactor(new THREE.Vector3(0,0,0));
   //  playerMesh.setLinearVelocity({x: playerMesh.userData.turnSpeed * playerMesh.userData.r * Math.sin(playerMesh.userData.rotation.y), y:playerMesh._physijs.linearVelocity.y, z: playerMesh.userData.turnSpeed * playerMesh.userData.r  * Math.cos(playerMesh.userData.rotation.y)} )
     //playerMesh.setAngularVelocity({x: playerMesh._physijs.angularVelocity.x, y: playerMesh.userData.turnSpeed*2, z: playerMesh._physijs.angularVelocity.z} )

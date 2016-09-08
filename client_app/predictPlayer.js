@@ -8,17 +8,17 @@
 var predictPlayer = function  (objects,delta) {
 
 
-    objects.forEach(function (playerItem) {
+    objects.forEach(function predictForEach (playerItem) {
 
         // console.log('CALL!!!!');
 
 
 
 
-        playerItem.__dirtyPosition = true; //physi.js
-        playerItem.__dirtyRotation = true;
-
-       /* if
+      //  playerItem.__dirtyPosition = true; //physi.js
+      //  playerItem.__dirtyRotation = true;
+/*
+        if
         (playerItem.userData.keyState[38] || playerItem.userData.keyState[87]) {
             playerItem.position.x += delta * playerItem.userData.turnSpeed * playerItem.userData.r * Math.sin(playerItem.userData.rotation.y);  //DO NOT USE PLAYER.ROTATION ITS NOT LINKED!!!
             playerItem.position.z += delta *  playerItem.userData.turnSpeed * playerItem.userData.r  * Math.cos(playerItem.userData.rotation.y);
@@ -27,6 +27,9 @@ var predictPlayer = function  (objects,delta) {
 
         checkKeyStates(playerItem, delta);
         cameraControl(playerItem);
+
+         // playerItem.__dirtyPosition = false; //physi.js
+         // playerItem.__dirtyRotation = false;
 
 
        // playerItem.userData.camera.updateMatrixWorld(); // TODO:  get/set
@@ -38,7 +41,7 @@ var predictPlayer = function  (objects,delta) {
       //   playerItem.mixer.update(delta);
 
 
-        checkRayCast(playerItem, scene);
+        //checkRayCast(playerItem, scene);
         //console.log(playerItem.intersected);
 
 

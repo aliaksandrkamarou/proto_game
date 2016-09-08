@@ -6,12 +6,12 @@
         // Node. Does not work with strict CommonJS, but
         // only CommonJS-like environments that support module.exports,
         // like Node.
-        module.exports = factory();
+        module.exports = factory(require('three'));
     } else {
         // Browser globals (root is window)
-        root.cameraControl = factory();
+        root.cameraControl = factory(root.THREE);
     }
-}(this, function () {
+}(this, function (THREE) {
     'use strict';
 
 
@@ -22,9 +22,12 @@ function cameraControl (player) {
     var camera = player.userData.camera;
 
 
+    var angle = new THREE.Euler().setFromQuaternion(player.userData.quaternion, 'YZX', false );
 
-    camera.position.x =  player.position.x + player.userData.playerCameraDist.distance *  (Math.sin( player.rotation.y + Math.PI ));
-    camera.position.z =  player.position.z  + player.userData.playerCameraDist.distance * Math.cos( player.rotation.y  + Math.PI);
+
+
+    camera.position.x =  player.position.x + player.userData.playerCameraDist.distance *  (Math.sin( /*player.rotation.y*/angle.y + Math.PI ));
+    camera.position.z =  player.position.z  + player.userData.playerCameraDist.distance * Math.cos( /*player.rotation.y*/angle.y   + Math.PI);
 
    // console.log('roy y '+player.rotation.y + 'cos y ' + Math.cos( (player.rotation.y)  ) + 'sin y '+  Math.sin( player.rotation.y  ) )
 
