@@ -286,6 +286,10 @@ VirtualJoystick.prototype._onTouchEnd	= function(event)
 	// if there is no touch in progress, do nothing
 	if( this._touchIdx === null )	return;
 
+	// notify event for validation
+	var isValid	= this.dispatchEvent('touchStartValidation', event);
+	if( isValid === false )	return;
+
 	// dispatch touchEnd
 	this.dispatchEvent('touchEnd', event);
 
