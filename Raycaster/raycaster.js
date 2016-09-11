@@ -1,7 +1,8 @@
 // raycaster
+'use strict';
 
-
-var mouse = new THREE.Vector2(), INTERSECTED;
+//var mouse = new THREE.Vector2(),
+var INTERSECTED;
 
 var raycaster = new THREE.Raycaster();
 var raycaster2 = new THREE.Raycaster();
@@ -30,7 +31,7 @@ sphere2.castShadow = true;
 var arrowHelper = new THREE.ArrowHelper();
 arrowHelper.name('rayCasterArrowHelper');
 */
-
+/*
 document.addEventListener( 'mousemove', onDocumentMouseMoveRaycater, false );
 
 function onDocumentMouseMoveRaycater( event ) {
@@ -39,7 +40,7 @@ function onDocumentMouseMoveRaycater( event ) {
     mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
   //  console.log('x: '+ mouse.x + ' y: '+ mouse.y)
 };
-
+*/
 //&& !(intersects[0].object instanceof THREE.AxisHelper)
 
 // CALL in RENDER Loop:
@@ -75,7 +76,14 @@ function Raycaster (camera) {
 
 function Raycaster2 (camera) {
 
+  //  console.log(JSON.stringify(camera.matrix));
+
   //  var mouse = new THREE.Vector2(0,0); // overrides!!!!
+  //  console.log('Raycaster2 mouse');
+ //   console.log(mouse);
+
+  //  console.log('Raycaster2 camera');
+  //  console.log(camera.toJSON());
 
     raycaster2.setFromCamera(mouse, camera);
     var intersects = raycaster2.intersectObjects(objects);  //objects is global
@@ -91,12 +99,24 @@ function Raycaster2 (camera) {
         INTERSECTED = null;
     }
 
+
+ //   console.log('Rotation '+ (INTERSECTED ? ('object rotation ' + JSON.stringify(INTERSECTED.rotation) )  : INTERSECTED ))
+
     if (intersects.length > 0){
         var mouse3D = intersects[0].point;
+
+        //console.log('intersects[0]')
+       // console.log(intersects[0])
+    //    console.log('mouse3D')
+    //    console.log(mouse3D)
         Raycaster3(mouse3D);
         rayPlayerToMouse(mouse3D);
 
     }
+
+   // if (intersects.length > 0){
+   //     camera.lookAt(intersects[0].point)
+   // }
 
 
 
@@ -118,6 +138,9 @@ function Raycaster3 (direction) {
     var sphere1 = scene.getObjectByName('sphere1');
     if(sphere1) sphere1.position.set(direction.x, direction.y, direction.z);
 
+ //   console.log('sphere1 position')
+  //  console.log(sphere1.position)
+
    // raycaster3.set(THREE.Vector3(0,0,0), direction);
    // var intersects3 = raycaster3.intersectObjects(scene.children);
    // if (intersects2.length > 0) {
@@ -131,7 +154,7 @@ function Raycaster3 (direction) {
 
 function rayPlayerToMouse(mouse3D){
 
-    var myPlayer = scene.getObjectByName('myPlayer');
+    var myPlayer = g_Player;
     var line  = scene.getObjectByName('line');
 
     if (myPlayer && line) {

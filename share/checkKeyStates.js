@@ -120,6 +120,21 @@
 
      //   console.log('getAngularVelocity ');
      //   console.log(player.getAngularVelocity());
+        if (player.userData.keyState[49]) {
+        //    console.log('49!!!!!!!!!!!!')
+         //   console.log(player.actions.action1.time)
+         //   console.log(player.userData.actions.action1Time)
+            player.actions.action1.play();
+
+        } else {
+         player.actions.action1.stop();
+         };
+        if (player.userData.keyState[50]) {
+            player.actions.action2.play();
+
+        } else {
+            player.actions.action2.stop();
+        };
 
 
       //  (isActive) ? player.actions.stand.stop() : player.actions.stand.play();
@@ -146,24 +161,31 @@
               //player.userData.rotation.y
 
               //FOR CORRECT Collision CALLBACK
-              var linearVelocity = player.getLinearVelocity();
+          //    var linearVelocity = player.getLinearVelocity();
 
+          player.applyCentralForce({
+              x: player.userData.turnSpeed * player.userData.r * Math.sin(angle.y),
+              y: 0,
+              z: player.userData.turnSpeed * player.userData.r * Math.cos(angle.y)
+          })
+
+/*
               player.setLinearVelocity({
                   x: player.userData.turnSpeed * player.userData.r * Math.sin(angle.y),
-                  y: /*player._physijs.*/linearVelocity.y,
+                  y: linearVelocity.y,
                   z: player.userData.turnSpeed * player.userData.r * Math.cos(angle.y)
               });
-
+*/
            //   player.userData.moveState.isRunning = true;
 
        //   }
 
-      /*  if (!player.isMoving){
-            player.applyCentralForce({x: player.userData.turnSpeed * player.userData.r * Math.sin(angle.y)* player._physijs.mass, y:0, z: player.userData.turnSpeed * player.userData.r  * Math.cos(angle.y)* player._physijs.mass} )
-            player.isMoving = true;
+    //    if (!player.isMoving){
+     //       player.applyCentralForce({x: player.userData.turnSpeed * player.userData.r * Math.sin(angle.y)* player._physijs.mass, y:0, z: player.userData.turnSpeed * player.userData.r  * Math.cos(angle.y)* player._physijs.mass} )
+    //        player.isMoving = true;
 
-        }
-*/
+    //    }
+
 
 
         } else if (!(player.userData.keyState[38] || player.userData.keyState[87]) && (player.userData.keyState[40] || player.userData.keyState[83]))
@@ -177,22 +199,28 @@
 
             var linearVelocity = player.getLinearVelocity();
 
-            player.setLinearVelocity({x: -player.userData.turnSpeed * player.userData.r * Math.sin(angle.y), y:/*player._physijs.*/linearVelocity.y, z: -player.userData.turnSpeed * player.userData.r  * Math.cos(angle.y)} )
+            player.applyCentralForce({
+                x: -player.userData.turnSpeed * player.userData.r * Math.sin(angle.y),
+                y: 0,
+                z: -player.userData.turnSpeed * player.userData.r * Math.cos(angle.y)
+            })
+
+           // player.setLinearVelocity({x: -player.userData.turnSpeed * player.userData.r * Math.sin(angle.y), y:linearVelocity.y, z: -player.userData.turnSpeed * player.userData.r  * Math.cos(angle.y)} )
 
 
 
         }
         else {
 
-/*
-          if(player.userData.isMoving){
-              var angle = new THREE.Euler().setFromQuaternion(player.userData.quaternion, 'YZX', false );
+//
+  //        if(player.userData.isMoving){
+  //            var angle = new THREE.Euler().setFromQuaternion(player.userData.quaternion, 'YZX', false );
 
-              player.applyCentralForce({x: -player.userData.turnSpeed * player.userData.r * Math.sin(angle.y)* player._physijs.mass, y:0, z: -player.userData.turnSpeed * player.userData.r  * Math.cos(angle.y)* player._physijs.mass} );
-              player.userData.isMoving = false;
+   //           player.applyCentralForce({x: -player.userData.turnSpeed * player.userData.r * Math.sin(angle.y)* player._physijs.mass, y:0, z: -player.userData.turnSpeed * player.userData.r  * Math.cos(angle.y)* player._physijs.mass} );
+   //           player.userData.isMoving = false;
 
-          }
-          */
+   //       }
+     //
 
 
       //    if (player.userData.moveState.isRunning) {
@@ -201,9 +229,9 @@
               // player.applyCentralForce({x:0, y:0, z: 0} )
               // player.applyCentralForce({x: -player.userData.turnSpeed * player.userData.r * Math.sin(angle.y)* player._physijs.mass, y:0, z: -player.userData.turnSpeed * player.userData.r  * Math.cos(angle.y)* player._physijs.mass} )
 
-              var linearVelocity = player.getLinearVelocity();
+             // var linearVelocity = player.getLinearVelocity();
 
-              player.setLinearVelocity({x: 0, y: /*player._physijs.*/linearVelocity.y, z: 0});
+           //   player.setLinearVelocity({x: 0, y: linearVelocity.y, z: 0});
               //console.log('linear velocity');
               //console.log(player.getLinearVelocity());
               //player.clearForces()
@@ -215,11 +243,19 @@
        // console.log(player.getLinearVelocity())
 
 
-        if (player.userData.keyState[37] || player.userData.keyState[65]) {
-            // left arrow or 'a' - rotate left
+        if ((player.userData.keyState[37] || player.userData.keyState[65]) && !(player.userData.keyState[39] || player.userData.keyState[68])) {
+            // left arrow or 'a' - rotate left NOT rigth
+            if(!(player.userData.keyState[87]||player.userData.keyState[83])) {
+                player.actions.turnL.play();
+            } else {player.actions.turnL.stop()}
+            player.actions.turnR.stop();
 
             //ver1
+            //var angularVelocity = player.getAngularVelocity();
          //   player.userData.rotation.y += delta * player.userData.turnSpeed
+         //   player.setAngularVelocity({x: angularVelocity.x, y: player.userData.turnSpeed, z: angularVelocity.z} )
+            player.applyTorque({x: 0, y: player.userData.turnSpeed, z: 0} )
+
 
             //player.setAngularVelocity({x: player._physijs.angularVelocity.x, y: player.userData.turnSpeed, z: player._physijs.angularVelocity.z} )
 
@@ -233,14 +269,20 @@
             //updatePlayerData();
             //socket.emit('updatePosition', playerData);
         } //else {player.setAngularVelocity({x:0,y:0,z:0})};
-        ;
-        if ((player.userData.keyState[39] || player.userData.keyState[68])) {
-            // right arrow or 'd' - rotate right
+
+        else if (!(player.userData.keyState[37] || player.userData.keyState[65]) && (player.userData.keyState[39] || player.userData.keyState[68])) {
+            // right arrow or 'd' - rotate right NOT Left
+            if(!(player.userData.keyState[87]||player.userData.keyState[83])) {
+                player.actions.turnR.play();
+            } else {player.actions.turnR.stop()}
+
+            player.actions.turnL.stop();
 
             //ver1
-            var angularVelocity = player.getAngularVelocity();
+          //  var angularVelocity = player.getAngularVelocity();
          //   player.userData.rotation.y -= delta * player.userData.turnSpeed;
-            player.setAngularVelocity({x: /*player._physijs.*/angularVelocity.x, y: -player.userData.turnSpeed, z: /*player._physijs.*/angularVelocity.z} )
+          //  player.setAngularVelocity({x: angularVelocity.x, y: -player.userData.turnSpeed, z: angularVelocity.z} )
+            player.applyTorque({x: 0, y: -player.userData.turnSpeed, z: 0} )
             //ver 2
             //!(player.userData.keyState[40] || player.userData.keyState[83]) ? player.userData.rotation.y -= delta * player.userData.turnSpeed : player.userData.rotation.y += delta * player.userData.turnSpeed ; // switch for backward
 
@@ -248,13 +290,16 @@
             //updatePlayerData();
             //socket.emit('updatePosition', playerData);
         } else {
+            player.actions.turnL.stop();
+            player.actions.turnR.stop();
 
-            var angularVelocity = player.getAngularVelocity();
-            player.setAngularVelocity({x: angularVelocity.x,y:0,z: angularVelocity.z})
+         //   var angularVelocity = player.getAngularVelocity();
+           // player.setAngularVelocity({x: angularVelocity.x,y:0,z: angularVelocity.z})
 
         };
-        ;
-        if (player.userData.keyState[81]) {
+
+
+   //     if (player.userData.keyState[81]) {
             // 'q' - strafe left
          //   player.position.x += delta *  player.userData.turnSpeed * player.userData.r  * Math.sin(player.userData.rotation.y);
          //   player.position.z += delta * player.userData.turnSpeed * player.userData.r  * Math.cos(player.userData.rotation.y);
@@ -262,9 +307,9 @@
             //player.position.z += player.moveSpeed * Math.sin(player.rotation.y);
             //updatePlayerData();
             //socket.emit('updatePosition', playerData);
-        }
-        ;
-        if (player.userData.keyState[69]) {
+  //      }
+     //   ;
+      //  if (player.userData.keyState[69]) {
             // 'e' - strafe right
          //   player.position.x -= delta * player.userData.turnSpeed * player.userData.r  * Math.sin(player.userData.rotation.y);
          //   player.position.z -= delta * player.userData.turnSpeed * player.userData.r  * Math.cos(player.userData.rotation.y);
@@ -272,20 +317,26 @@
             //player.position.z -= player.moveSpeed * Math.sin(player.rotation.y);
             //updatePlayerData();
             //socket.emit('updatePosition', playerData);
-        }
-        ;
+       // }
+
+       // ;
         //console.log('some force '+ JSON.stringify(player.getTotalForce()));
 
        (player.userData.mouseState[0]) ? player.actions.attack.play() : player.actions.attack.stop();
       //  (player.userData.keyState[70]) ? player.actions.wave.play() : player.actions.wave.stop();
+
+
+       // jump
         if (player.userData.keyState[32]) {
-            console.log('pre impulse '+ JSON.stringify(player.getLinearVelocity()));
-            player.applyCentralImpulse({x:0,y:3,z:0});
-            console.log('post impulse '+ JSON.stringify(player.getLinearVelocity()));
-         //   console.log('pre force '+ JSON.stringify(player.getTotalForce()));
+        //    console.log('pre impulse '+ JSON.stringify(player.getLinearVelocity()));
+        //    player.applyCentralImpulse({x:0,y:3,z:0});
+         //   console.log('post impulse '+ JSON.stringify(player.getLinearVelocity()));
+            console.log('pre force '+ JSON.stringify(player.getTotalForce()));
          //   player.applyCentralForce({x:0,y:30,z:0});
-         //   console.log('post force '+ JSON.stringify(player.getTotalForce()));
+            player.applyCentralForce({x:0,y:100,z:0});
+            console.log('post force '+ JSON.stringify(player.getTotalForce()));
         };
+
 
 
 

@@ -2,13 +2,13 @@
 var express = require('express');
 var app = express();
 var server = require('http').createServer(app);
-var io = require('socket.io')(server);
+var io = require('socket.io')(server/*, {'pingTimeout' : 120000 }*/);
 var logger = require('morgan');
 var favicon = require('serve-favicon');
 var THREE = require('three');
 var fs = require('fs');
 
-
+//console.log(io)
 
 var world = require('./server_app/server_world');
 //var async = require('async');
@@ -65,7 +65,7 @@ io.on('connection', function(socket){
    // world.postServerMessages.push (player);
    // world.postServerMessages.push (JSON.parse(JSON.stringify(player)));
 
-    socket.emit('droid', world.jsonContent);
+    //socket.emit('droid', world.jsonContent);
 
     //var player = world.playerForId(id); // get player's data by id
 
@@ -175,7 +175,7 @@ io.on('connection', function(socket){
 
             var playerMesh = world.objectForPID(socket.id)
             playerMesh.inputStates.push(state);
-        console.log(state[9])
+      //  console.log(state[9])
 
      //   } else {
 
@@ -212,15 +212,15 @@ io.on('connection', function(socket){
 
     socket.on('onWindowResize', function(aspect){
         console.log('input apect '+ aspect)
-        console.log(player.keyState);
+    //    console.log(player.keyState);
         player.camera.aspect = aspect;
         player.camera.updateProjectionMatrix();
         player.cameraJSON = player.camera.toJSON();
         console.log(player === world.playerForId(id));
 
-        var loader = new THREE.ObjectLoader();
-        console.log(player.cameraJSON);
-        console.log(loader.parse(player.cameraJSON));
+     //   var loader = new THREE.ObjectLoader();
+    //    console.log(player.cameraJSON);
+    //    console.log(loader.parse(player.cameraJSON));
 
         console.log('acpect :'+ player.camera.aspect+ 'for player id'+ id)
 
@@ -613,7 +613,7 @@ setInterval(function sendUpdateToClient(){
 
  //   var i ='hello';
    if (world.postServerMessages.length > 0) {
- //      console.log('post '+ world.postServerMessages[0].ts_client);
+       //console.log(world.postServerMessages[0].actions);
        //   console.log('rotation!!!!')
        //    var postServerMessagesCOPY = JSON.parse(JSON.stringify(world.postServerMessages))
        // if (world.players[0]) console.log(world.players[0]._physijs)

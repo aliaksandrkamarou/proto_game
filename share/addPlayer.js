@@ -19,7 +19,7 @@
 
 
 
-function addPlayer (data, geometryTemplate, materialTemplate, scene, objects, players, isPhysics, deactivate) {
+function addPlayer (data, geometryTemplate, materialTemplate, scene, objects, players, isPhysics) {
 
 /*
     var material = new THREE.MeshPhongMaterial({
@@ -44,8 +44,11 @@ function addPlayer (data, geometryTemplate, materialTemplate, scene, objects, pl
 
 
     //   var playerMesh =   new THREE.Mesh(geometryTemplate, material);//new physijs.Convex(geometryTemplate, material) //  ;//  //
-    var playerMesh = isPhysics ? new Physijs.SkinnedBoxMesh(geometryTemplate, material/* , 1*/):  new Physijs.SkinnedBoxMesh(geometryTemplate, material,0/* , 1*/)//new THREE.SkinnedMesh(geometryTemplate, material);
-   // var playerMesh =  new THREE.SkinnedMesh(geometryTemplate, material);
+  //  var playerMesh = isPhysics ? new Physijs.SkinnedBoxMesh(geometryTemplate, material/* , 1*/):  new Physijs.SkinnedBoxMesh(geometryTemplate, material,0/* , 1*/)//new THREE.SkinnedMesh(geometryTemplate, material);
+    var playerMesh = isPhysics ? new Physijs.SkinnedCapsuleMesh(geometryTemplate, material/* , 1*/):  new Physijs.SkinnedBoxMesh(geometryTemplate, material,0/* , 1*/)//new THREE.SkinnedMesh(geometryTemplate, material);
+    playerMesh.castShadow = true;
+
+    // var playerMesh =  new THREE.SkinnedMesh(geometryTemplate, material);
  //   var playerMesh =  new Physijs.SkinnedBoxMesh(geometryTemplate, material);
    // if (deactivate) playerMesh._physijs.activation_state=5 // deactivate simulation
 
@@ -116,7 +119,8 @@ function addPlayer (data, geometryTemplate, materialTemplate, scene, objects, pl
                 playerMesh.actions.attack.time = val;
             }
 
-        }/*,
+        },
+        /*
         'waveTime': {
             get: function () {
                 return playerMesh.actions.wave.time;
@@ -125,7 +129,43 @@ function addPlayer (data, geometryTemplate, materialTemplate, scene, objects, pl
                 playerMesh.actions.wave.time = val;
             }
 
-        }*/
+        },*/
+        'turnLTime': {
+            get: function () {
+                return playerMesh.actions.turnL.time;
+            },
+            set: function (val) {
+                playerMesh.actions.turnL.time = val;
+            }
+
+        },
+        'turnRTime': {
+            get: function () {
+                return playerMesh.actions.turnR.time;
+            },
+            set: function (val) {
+                playerMesh.actions.turnR.time = val;
+            }
+
+        },
+        'action1Time': {
+            get: function () {
+                return playerMesh.actions.action1.time;
+            },
+            set: function (val) {
+                playerMesh.actions.action1.time = val;
+            }
+
+        },
+        'action2Time': {
+            get: function () {
+                return playerMesh.actions.action2.time;
+            },
+            set: function (val) {
+                playerMesh.actions.action2.time = val;
+            }
+
+        }
 
     });
 
@@ -199,6 +239,7 @@ function addPlayer (data, geometryTemplate, materialTemplate, scene, objects, pl
     cube.name = 'greenCube';
 */
     scene.add(playerMesh)
+    playerMesh.setDamping((1 - 1e-7), (1 - 1e-7)) // works only after scene.add()
 
   //  scene.add(cube);
 
@@ -230,8 +271,8 @@ function addPlayer (data, geometryTemplate, materialTemplate, scene, objects, pl
 
 
 
-    //playerMesh.setLinearFactor(new THREE.Vector3(1,0,1));
-    playerMesh.setAngularFactor(new THREE.Vector3(0,0,0));
+ //   playerMesh.setLinearFactor(new THREE.Vector3(1,0,1));
+    playerMesh.setAngularFactor(new THREE.Vector3(0,1,0));
   //  playerMesh.setLinearVelocity({x: playerMesh.userData.turnSpeed * playerMesh.userData.r * Math.sin(playerMesh.userData.rotation.y), y:playerMesh._physijs.linearVelocity.y, z: playerMesh.userData.turnSpeed * playerMesh.userData.r  * Math.cos(playerMesh.userData.rotation.y)} )
     //playerMesh.setAngularVelocity({x: playerMesh._physijs.angularVelocity.x, y: playerMesh.userData.turnSpeed*2, z: playerMesh._physijs.angularVelocity.z} )
 

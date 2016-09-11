@@ -73,133 +73,135 @@
 
 
 'use strict';
+var socket;  // it is used in animation frame to send data
+function onready() {
+    socket = io();
 
-        var socket = io();
-        socket.on('connect', function () {
-            console.log('client connected ID '+ socket.id);
-           // loadWorld();
-            socket.emit('requestOldPlayers', {});
-
-
-
-
-            function RTT() {
-                socket.emit('rtt test', performance.now(), function (startTime) {
-                    statsRTT.update();
-                    var latency = performance.now() - startTime;
-                    // console.log('rtt '+ latency);
-
-                    RTT();
-                });
-            }
-
-            //RTT();
+    socket.on('connect', function () {
+        console.log('client connected ID ' + socket.id);
+        // loadWorld();
+        socket.emit('requestOldPlayers', {});
 
 
+        function RTT() {
+            socket.emit('rtt test', performance.now(), function (startTime) {
+                statsRTT.update();
+                var latency = performance.now() - startTime;
+                // console.log('rtt '+ latency);
+
+                RTT();
+            });
+        }
+
+        //RTT();
 
 
-        });  // пока ничего не делать при установлении подключения
+    });  // пока ничего не делать при установлении подключения
 
-        socket.on('createPlayer',function(data){
-            console.log('createPlayer on');
+    socket.on('createPlayer', function (data) {
+        console.log('createPlayer on');
 
-            console.log(data)
-
-
-            g_Player = addPlayer(data, geometryTemplate,multiMaterialTemplate, scene, objects, players, true); // cant USE CLIENT SOCKET.ID as of it may differ from server socket id https://github.com/socketio/socket.io/issues/2405
-            console.log('SER/DE')
-            console.log(JSON.parse(JSON.stringify(g_Player)))
-            console.log(data);
-
-            g_PlayerObject = objectForPID(g_Player.playerId);
-
-            g_Player.camera = objectLoader.parse(data.cameraJSON);
-            g_Player.camera.position.set(data.camPos.x,data.camPos.y, data.camPos.z)
-            g_Player.camera.aspect = window.innerWidth / window.innerHeight;
-            g_Player.camera.updateProjectionMatrix();
-            g_Player.camera.lookAt(new THREE.Vector3( 0, 0, 0 ));
-            g_Player.camera.updateMatrixWorld();
-            socket.emit('onWindowResize', g_Player.camera.aspect); // Notify server about initial ASCPECT
-            console.log('cam re-init');
+        console.log(data)
 
 
-        });
+        g_Player = addPlayer(data, geometryTemplate, multiMaterialTemplate, scene, objects, players, true); // cant USE CLIENT SOCKET.ID as of it may differ from server socket id https://github.com/socketio/socket.io/issues/2405
+        console.log('SER/DE')
+        console.log(JSON.parse(JSON.stringify(g_Player)))
+        console.log(data);
 
-        socket.on('addOtherPlayer', function(data){ //TODO: PHYSICS on/off
-            var player = addPlayer(data, geometryTemplate,multiMaterialTemplate, scene, objects, players, false);
+   //     controls = new THREE.OrbitControls( g_Player.camera, renderer.domElement );
+        //controls.addEventListener( 'change', render ); // add this only if there is no animation loop (requestAnimationFrame)
+   //     controls.enableDamping = true;
+    //    controls.dampingFactor = 0.25;
+    //    controls.enableZoom = false;
 
-            player.local_timer = data.ts_client;
-            player.ts_client = data.ts_client;
 
 
+        g_PlayerObject = objectForPID(g_Player.playerId);
+
+        g_Player.camera = objectLoader.parse(data.cameraJSON);
+        g_Player.camera.position.set(data.camPos.x, data.camPos.y, data.camPos.z)
+        g_Player.camera.aspect = window.innerWidth / window.innerHeight;
+        g_Player.camera.updateProjectionMatrix();
+        g_Player.camera.lookAt(new THREE.Vector3(0, 0, 0));
+        g_Player.camera.updateMatrixWorld();
+        socket.emit('onWindowResize', g_Player.camera.aspect); // Notify server about initial ASCPECT
+        console.log('cam re-init');
+
+
+    });
+
+    socket.on('addOtherPlayer', function (data) { //TODO: PHYSICS on/off
+        var player = addPlayer(data, geometryTemplate, multiMaterialTemplate, scene, objects, players, true);
+
+        player.local_timer = data.ts_client;
+        player.ts_client = data.ts_client;
 
 
 //            var otherPlayerObject = objectForPID(player.playerId);
 //
-         //   otherPlayerObject.mass = 0 ;
+        //   otherPlayerObject.mass = 0 ;
 
 
+        //g_PlayerObject.mass = 0 // setter to dynamic world ??
+        // updateOnePlayer(data);
+
+    });
+
+    socket.on('removeOtherPlayer', function (data) {
+        console.log('removePLAYER ' + JSON.stringify(data))
+        removeOtherPlayer(data);
+    });
 
 
+    socket.on('updateWorld', function (data) {
 
 
-
-            //g_PlayerObject.mass = 0 // setter to dynamic world ??
-           // updateOnePlayer(data);
-
-        });
-
-        socket.on('removeOtherPlayer', function(data){
-            console.log('removePLAYER '+ JSON.stringify(data) )
-            removeOtherPlayer(data);
-        });
+        // console.log('WORLD UPDATE FOR!!!!!!!!!!!!');
+        //   console.log(socket.id);
+        console.timeStamp('socket UPD World');
+        //  updatePlayerData(data);
+    })
 
 
+    socket.on('rAF update from Server', function (data) {
 
-        socket.on('updateWorld', function(data){
-
-
-           // console.log('WORLD UPDATE FOR!!!!!!!!!!!!');
-         //   console.log(socket.id);
-            console.timeStamp('socket UPD World');
-          //  updatePlayerData(data);
-        })
+        // console.log('WORLD UPDATE FOR!!!!!!!!!!!!');
+        //   console.log(socket.id);
+        // updatePlayerData(data);
 
 
-
-        socket.on('rAF update from Server', function(data){
-
-            // console.log('WORLD UPDATE FOR!!!!!!!!!!!!');
-            //   console.log(socket.id);
-           // updatePlayerData(data);
+    })
 
 
+    socket.on('outer_UPD_world_CLI', function (data) {
+       // console.log('SOCKET FIRED');
 
-        })
+        if (messageStack.length > 0) {
+            messageStack.shift();
+            console.log('shift DATA')
+        }
+        ;
+        messageStack.push(data);
+        //  if (g_Pending_server_hist.length > 0) g_Pending_server_hist.shift();
+        //  g_Pending_server_hist.push(data);
+
+        serverLastUpdateTime = data.serverLastUpdateTime; // GLOBALS
+        //  console.log(serverLastUpdateTime)
+        serverLastSentTime = data.serverLastSentTime; // GLOBALS
+
+        //console.log('serverLastSentTime ' + serverLastSentTime)
+        //  console.log(serverLastSentTime)
 
 
-        socket.on('outer_UPD_world_CLI',function(data){
-           console.log('SOCKET FIRED');
-
-            if (messageStack.length > 0) {messageStack.shift() ; console.log('shift DATA')};
-            messageStack.push(data);
-          //  if (g_Pending_server_hist.length > 0) g_Pending_server_hist.shift();
-          //  g_Pending_server_hist.push(data);
-
-            serverLastUpdateTime = data.serverLastUpdateTime; // GLOBALS
-          //  console.log(serverLastUpdateTime)
-            serverLastSentTime = data.serverLastSentTime; // GLOBALS
-
-            console.log('serverLastSentTime ' + serverLastSentTime)
-          //  console.log(serverLastSentTime)
-
-
-           // console.log(data)
+        // console.log(data)
 
 
         //    console.log(messageStack.length)
-           // alert(JSON.stringify(data[0]));
-           /* data[0].forEach(function(p, i){
+        // alert(JSON.stringify(data[0]));
+
+
+        /* data[0].forEach(function(p, i){
                 console.log('P'+i+ ' mixerTime '+  p.mixerTime)
                 //messageStack[0] = data;
             });
@@ -210,11 +212,12 @@
         })
 
 
-        socket.on ('Hello', function (data){
+        socket.on ('Hello',
+                function (data){
             console.log(data)
         } )
 
-
+}
 
 
 
@@ -225,15 +228,17 @@
     </script>
 </head>
 <body>
+<!--
 <div style="position:absolute; z-index:10; background:rgba(0,0,0,.5); padding:10px; color:#fff;">
     W key : foward<br>
     S key : backword<br>
     A key : left<br>
     D key : right<br>
     C key : toggle Crouch<br>
-    <!--Enter key : chat<br>-->
+
     MouseDrag : rotate
 </div>
+-->
 <div id="container"></div>
 <script>
 

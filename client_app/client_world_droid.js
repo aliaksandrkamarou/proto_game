@@ -39,9 +39,50 @@ var g_CheckPoint;
 var geometryTemplate, multiMaterialTemplate;
 ////////////////////////////////////
 //init
-var light = new THREE.DirectionalLight(0xffffff, 1.5);
-light.position.set(1, 1, 1).normalize();
+var light = new THREE.DirectionalLight(0xffffff,1);
+light.position.set(-10,10, -7)//.normalize();
 light.castShadow = true;
+
+
+//light.shadow.mapSize.width= 2048;
+//light.shadow.mapSize.height = 2048;
+
+light.shadow.camera.left = -20;
+light.shadow.camera.right = 20;
+light.shadow.camera.top = 20;
+light.shadow.camera.buttom = -20;
+light.shadow.mapSize.set(2048,2048)
+//light.shadow.bias = 0.1
+//light.shadow.radius = .5
+var light2 = new THREE.AmbientLight( 0x404040 );
+
+
+
+
+
+
+
+//var ls =  new THREE.DirectionalLightShadow()
+
+
+var spotLight = new THREE.SpotLight( 0xffffff );
+spotLight.position.set( -10, 10, 10 );
+
+spotLight.castShadow = true;
+spotLight.shadow.camera.near = 1
+spotLight.shadow.camera.far = 1000;
+spotLight.shadow.mapSize.width = 2048;
+spotLight.shadow.mapSize.height = 2048;
+//spotLight.shadow.darkness = 0.1
+
+//spotLight.angle = .1
+
+/*
+spotLight.shadow.camera.near = 500;
+spotLight.shadow.camera.far = 4000;
+spotLight.shadow.camera.fov = 30;
+*/
+//var slshadow = new THREE.SpotLightShadow();
 
 
 //var scene = new physijs.Scene( '../lib/physijs-worker.js', {gravity:{x:0, y:-9.8, z:0}} );//
@@ -55,23 +96,35 @@ var scene = scene_world_bodys_meshs.scene;
 //var OIMOmeshs = (scene_world_bodys_meshs.meshs);
 
 //var scene = new Physijs.Scene({fixedTimeStep: 0 });
-scene.fog = new THREE.FogExp2(0x000000, 0.001);
+scene.fog = new THREE.FogExp2(0x000000, 0.01);
 scene.autoUpdate = false || true;
 
 
 
-
+//scene.add(light2)
 scene.add(light);
+scene.add(spotLight);
+spotLight.angle = 0.25;
 
+spotLight.penumbra = .2;
+spotLight.intensity = .5;
+
+//var shadowHelper = new THREE.CameraHelper( light.shadow.camera );
+//var shadowHelper = new THREE.CameraHelper( spotLight.shadow.camera );
+var spotLightHelper = new THREE.SpotLightHelper( spotLight )
+scene.add(spotLightHelper);
+
+//scene.add(ls)
+//scene.add( spotLight );
 //var JSONloader = new THREE.JSONLoader();
 var loader = new THREE.JSONLoader();
-loader.load("droid.js", function (geometry) {
+//loader.load("droid.js", function (geometry) {
    // geometryTemplate = geometry;
     //geometryTemplate.scale(.02,.02,.02);
    // geometryTemplate.rotateY( Math.PI );
     //geometry.updateMatrix();
     //geometryTemplate.verticesNeedUpdate = true;
-});
+//});
 
 
 //var mixer;
@@ -83,6 +136,7 @@ loader.load('../models/Y_Bot/Y_Bot_v2.json',function(geometry, materials) {
 
     multiMaterialTemplate = materials;
     geometryTemplate = geometry;
+    onready();
   /*
     var multiMaterial = new THREE.MultiMaterial(materials);
 
@@ -316,8 +370,12 @@ document.addEventListener('mouseup', onMouseUp, false);
 
 document.addEventListener('mousemove', onDocumentMouseMoveRaycater, false);
 
-
+var shouldHandleKeyDown = new Array(222);
+shouldHandleKeyDown.fill(true);
 function onKeyDown(event) {
+
+    if (!shouldHandleKeyDown[event.keyCode||event.which]) return;
+    shouldHandleKeyDown[event.keyCode||event.which] = false;
 
     console.log((event.keyCode || event.which));
 
@@ -356,6 +414,7 @@ function onKeyDown(event) {
   //  g_Temp_state.keyState[event.keyCode || event.which] = true;
     // socket.emit('keydown',event.keyCode || event.which); // emit keyCode or which depending on browser
       console.log('keydown emitted ' + event.keyCode || event.which);
+
     //  console.log(event);
     ///
     //  document.removeEventListener('keydown',onKeyDown, false );
@@ -365,6 +424,7 @@ function onKeyDown(event) {
 };
 
 function onKeyUp(event) {
+    shouldHandleKeyDown[event.keyCode||event.which] = true;
     g_Player.keyState[event.keyCode || event.which] = false;
    // g_Temp_state.keyState[event.keyCode || event.which] = false;
     //  socket.emit('keyup',event.keyCode || event.which); // emit keyCode or which depending on browser
@@ -434,7 +494,7 @@ var updateOnePlayer = function (playerData, ts) {
 
 
 
-        //   player.userData.isCameraFollow = playerData.isCameraFollow;
+        //player.userData.isCameraFollow = playerData.isCameraFollow;
      //   player.userData.ts = ts;
 
         player.userData.ts_server = playerData.ts_client//serverLastUpdateTime//playerData.ts_server // last ts proceeded by server;
@@ -510,9 +570,55 @@ var updateOnePlayer = function (playerData, ts) {
         }
         ;
 
+        if ((player.userData.keyState[37] || player.userData.keyState[65]) && !(player.userData.keyState[39] || player.userData.keyState[68])) {
+            // left arrow or 'a' - rotate left NOT rigth
+            if(!(player.userData.keyState[87]||player.userData.keyState[83])) {
+                player.actions.turnL.play();
+            } else {player.actions.turnL.stop()}
+            player.actions.turnR.stop();
+
+           //socket.emit('updatePosition', playerData);
+        } //else {player.setAngularVelocity({x:0,y:0,z:0})};
+
+        else if (!(player.userData.keyState[37] || player.userData.keyState[65]) && (player.userData.keyState[39] || player.userData.keyState[68])) {
+            // right arrow or 'd' - rotate right NOT Left
+            if(!(player.userData.keyState[87]||player.userData.keyState[83])) {
+                player.actions.turnR.play();
+            } else {player.actions.turnR.stop()}
+
+            player.actions.turnL.stop();
+       //socket.emit('updatePosition', playerData);
+        } else {
+            player.actions.turnL.stop();
+            player.actions.turnR.stop();
+
+        };
 
 
-    //    (playerData.keyState[38] || playerData.keyState[87]) ? player.actions.run.play() :  player.actions.run.stop();
+
+
+
+
+        if (player.userData.keyState[49]) {
+            //    console.log('49!!!!!!!!!!!!')
+            //   console.log(player.actions.action1.time)
+            //   console.log(player.userData.actions.action1Time)
+            player.actions.action1.play();
+
+        } else {
+            player.actions.action1.stop();
+        };
+        if (player.userData.keyState[50]) {
+            player.actions.action2.play();
+
+        } else {
+            player.actions.action2.stop();
+        };
+
+
+
+
+        //    (playerData.keyState[38] || playerData.keyState[87]) ? player.actions.run.play() :  player.actions.run.stop();
     //    (playerData.keyState[40] || playerData.keyState[83]) ? player.actions.back.play() : player.actions.back.stop();
 
         (playerData.mouseState[0]) ? player.actions.attack.play() : player.actions.attack.stop();
@@ -562,12 +668,35 @@ var updateOnePlayer = function (playerData, ts) {
             player.actions.stand.time = playerData.actions.standTime;
             //  console.log ('ATTACK TIME CHANGED'+ player.actions.attack.time +' ' + playerData.actions.attackTime);
         }
-/*
-        if (player.actions.wave.time != playerData.actions.waveTime) {
-            player.actions.wave.time = playerData.actions.waveTime;
-            //  console.log ('WAVE TIME CHANGED');
+        if (player.actions.turnL.time != playerData.actions.turnLTime) {
+            //  console.log ('PRE ATTACK TIME CHANGED'+ player.actions.attack.time +' ' + playerData.actions.attackTime);
+            player.actions.turnL.time = playerData.actions.turnLTime;
+            //  console.log ('ATTACK TIME CHANGED'+ player.actions.attack.time +' ' + playerData.actions.attackTime);
         }
-*/
+        if (player.actions.turnR.time != playerData.actions.turnRTime) {
+            //  console.log ('PRE ATTACK TIME CHANGED'+ player.actions.attack.time +' ' + playerData.actions.attackTime);
+            player.actions.turnR.time = playerData.actions.turnRTime;
+            //  console.log ('ATTACK TIME CHANGED'+ player.actions.attack.time +' ' + playerData.actions.attackTime);
+        }
+       // console.log('TA-TIME '+playerData.actions.action1Time)
+        if (player.actions.action1.time != playerData.actions.action1Time) {
+            //  console.log ('PRE ATTACK TIME CHANGED'+ player.actions.attack.time +' ' + playerData.actions.attackTime);
+            player.actions.action1.time = playerData.actions.action1Time;
+            //  console.log ('ATTACK TIME CHANGED'+ player.actions.attack.time +' ' + playerData.actions.attackTime);
+        }
+        if (player.actions.action2.time != playerData.actions.action2Time) {
+            //  console.log ('PRE ATTACK TIME CHANGED'+ player.actions.attack.time +' ' + playerData.actions.attackTime);
+            player.actions.action2.time = playerData.actions.action2Time;
+            //  console.log ('ATTACK TIME CHANGED'+ player.actions.attack.time +' ' + playerData.actions.attackTime);
+        }
+
+
+        /*
+                if (player.actions.wave.time != playerData.actions.waveTime) {
+                    player.actions.wave.time = playerData.actions.waveTime;
+                    //  console.log ('WAVE TIME CHANGED');
+                }
+        */
         if(!isInterPhysAnim || player.playerId != g_Player.playerId) {player.mixer.update(0)};
 
 
@@ -583,7 +712,7 @@ var updateOnePlayer = function (playerData, ts) {
             g_Player.needReconcilation = true;
 
             //TODO: make it simpler
-            g_Player.camera = objectLoader.parse(playerData.cameraJSON);
+            g_Player.camera.copy(objectLoader.parse(playerData.cameraJSON));
            // g_Player.camera = camera;
 
 
@@ -660,14 +789,20 @@ console.log('cam 1st init')
 renderer = new THREE.WebGLRenderer();
 renderer.setSize(width, height);
 
-renderer.gammaInput = true;
-renderer.gammaOutput = true;
-//renderer.shadowMap.enabled = true;
+//renderer.gammaInput = true;
+//renderer.gammaOutput = true;
+renderer.shadowMap.enabled = true;
 //renderer.shadowMap.renderReverseSided = false;
 //renderer.shadowMapEnabled = true;
+//renderer.shadowMap.Soft = true;
+//renderer.shadowMap.Type = THREE.PCFShadowMap;
+//renderer.shadowCameraFov = 90;
 //renderer.shadowMapSoft = true;
 
-//	renderer.shadowCameraNear = camera.near;
+//renderer.shadowMapBias = 0.0039;
+//renderer.shadowMap.darkness = 0.1;
+
+//	renderer.shadowCameraNear = 10;
 //	renderer.shadowCameraFar = camera.far;
 //	renderer.shadowCameraFov = 50;
 //	renderer.shadowMapBias = 0.0039;
@@ -690,13 +825,13 @@ renderer.gammaOutput = true;
 // controls
 
 var controls;
-
-// controls = new THREE.OrbitControls( camera, renderer.domElement );
+/*
+ controls = new THREE.OrbitControls( camera, renderer.domElement );
 //controls.addEventListener( 'change', render ); // add this only if there is no animation loop (requestAnimationFrame)
-//  controls.enableDamping = true;
-//  controls.dampingFactor = 0.25;
-//  controls.enableZoom = true;
-
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.25;
+  controls.enableZoom = true;
+*/
 //   controls = new THREE.PointerLockControls( camera );
 
 //   scene.add( controls.getObject() );
@@ -1045,6 +1180,7 @@ function animate(ts) {
 
 
     requestAnimationFrame(animate);
+   // slshadow.update(spotLight);
 
     ///console.log(scene.getObjectByName('greenCube').position);
 
@@ -1056,6 +1192,9 @@ function animate(ts) {
 
 
     if (g_Player) {
+      //  controls.update();
+
+        //g_Player.camera.position.x += 1;
 
         // interpolation may change g_Player that will be saved in the pending_state, so we need to update to last pending state it.
         if(isInterPhysAnim && g_Pending_input.length > 0){
@@ -1079,6 +1218,7 @@ function animate(ts) {
 
 
 
+
           //  g_PlayerObject.actions.run.time = lastPendind[14].runTime;
         }
 
@@ -1091,7 +1231,8 @@ function animate(ts) {
             keyState: g_Player.keyState,
             mouseState: g_Player.mouseState,
             mouse2D: g_Player.mouse2D,
-            moveState: g_Player.moveState
+            moveState: g_Player.moveState,
+            isCameraFollow: g_Player.isCameraFollow
             //position: g_Player.position,
             //quaternion: g_Player.quaternion
         }))
@@ -1265,7 +1406,7 @@ function animate(ts) {
 
                 } else if (state[0] == g_Player.ts_server){
 
-/*
+
                     g_PlayerObject.getLinearVelocity(); // update _physijs.linearVelocity
 
                    // console.log ('server delta pre: '+state[5] );
@@ -1279,11 +1420,14 @@ function animate(ts) {
                         console.warn('reconcilation: Quaternion  does not match. Server: ' + JSON.stringify(g_Player.quaternion) +'   Client:'+  JSON.stringify(state[15])  + ' ts_server ' +  g_Player.ts_server + ' state[0] '+ state[0]  )}
                     else {console.log('!!!!!!!!!!!!quaternion okay!!!!!!!!!!!! g_Player.rotation' + JSON.stringify(g_Player.quaternion) + ' state[7] '+ JSON.stringify(state[15]))} ;
 
-                    if(g_Player._physijs.linearVelocity.x != state[18].x || g_Player._physijs.linearVelocity.y != state[18].y ||g_Player._physijs.linearVelocity.z != state[18].z) {
-                        console.warn('reconcilation: ._physijs.linearVelocity  does not match. Server: ' + JSON.stringify(g_Player._physijs.linearVelocity) +'   Client:'+  JSON.stringify(state[18])  + ' ts_server ' +  g_Player.ts_server + ' state[0] '+ state[0]  )}
-                    else {console.log('!!!!!!!!!!!!._physijs.linearVelocity okay!!!!!!!!!!!! g_Player._physijs.linearVelocity' + JSON.stringify(g_Player._physijs.linearVelocity) + ' state[18] '+ JSON.stringify(state[18]))} ;
+                   // console.log(g_PlayerObject._physijs.linearVelocity)
+                   // console.log(state);
 
-*/
+                    if(g_PlayerObject._physijs.linearVelocity.x != state[18].x || g_PlayerObject._physijs.linearVelocity.y != state[18].y ||g_PlayerObject._physijs.linearVelocity.z != state[18].z) {
+                        console.warn('reconcilation: ._physijs.linearVelocity  does not match. Server: ' + JSON.stringify(g_Player._physijs.linearVelocity) +'   Client:'+  JSON.stringify(state[18])  + ' ts_server ' +  g_Player.ts_server + ' state[0] '+ state[0]  )}
+                    else {console.log('!!!!!!!!!!!!._physijs.linearVelocity okay!!!!!!!!!!!! g_PlayerObject._physijs.linearVelocity' + JSON.stringify(g_PlayerObject._physijs.linearVelocity) + ' state[18] '+ JSON.stringify(state[18]))} ;
+
+
 
                 } else {
                     //   (g_Player.keyState != state[1]) ? console.log('reconcilation: keyState does not match. client:  '+ JSON.stringify(g_Player.keyState) + ' Server '+ JSON.stringify(state[1])) : null ;
@@ -1297,7 +1441,7 @@ function animate(ts) {
                     // g_Player.position.set(state[6].x, state[6].y, state[6].z);
                     // (g_Player.rotation.x != state[7]._x || g_Player.rotation.y != state[7]._y ||g_Player.rotation.z != state[7]._z || g_Player.rotation.order != state[7]._order) ? console.log('reconcilation: rotation  does not match. Client: ' + JSON.stringify(g_Player.rotation) +'   Server:'+  JSON.stringify(state[7])  ) : console.log('!!!!!!!!!!!!rotation okay!!!!!!!!!!!!') ;
                     // g_Player.rotation.set(state[7]._x, state[7]._y, state[7]._z, state[7]._order)
-                    // g_Player.isCameraFollow = state[8];
+                     g_Player.isCameraFollow = state[8];
 ////////////////////////////////
 
 
@@ -1541,6 +1685,7 @@ function animate(ts) {
         g_Player.mouseState = g_Current_state.mouseState;
         g_Player.mouse2D.set(g_Current_state.mouse2D.x, g_Current_state.mouse2D.y);
         g_Player.moveState = g_Current_state.moveState;
+        g_Player.isCameraFollow = g_Current_state.isCameraFollow
 
 
       //  console.log(g_Player.ts_client)
@@ -1896,10 +2041,13 @@ function animate(ts) {
             if (numberSteps > 0) {
                 //TODO: refactor this super long array
 
+                var angularVelocity = g_PlayerObject.getAngularVelocity();
+                var linearVelocity = g_PlayerObject.getLinearVelocity();
+
 
                 var predictedState = JSON.parse(JSON.stringify([g_Player.ts_client, g_Player.keyState, g_Player.mouseState, g_Player.mouse2D, g_Player.ts_server, g_Player.last_client_delta, g_Player.position, g_Player.rotation, g_Player.isCameraFollow, g_Player.serverLastSentTime, g_Player.mixerTime, numberSteps, g_timeReminder,g_Player.totalNumberSteps, g_Player.actions/*[14]*//*,g_Player.quaternion*//*15*/]));
                 predictedState.push(g_Player.quaternion.clone()/* el 15*/,g_Player.position.clone()/* el 16*/)
-                predictedState.concat(JSON.parse(JSON.stringify([g_PlayerObject.getAngularVelocity()/*el 17*/, g_PlayerObject.getLinearVelocity()/* el 18*/,g_PlayerObject.userData.moveState/* el 19*/])));
+                predictedState = predictedState.concat(JSON.parse(JSON.stringify([angularVelocity/*el 17*/, linearVelocity/* el 18*/,g_PlayerObject.userData.moveState/* el 19*/])));
 
 
                 //      console.log('ts_client ' + predictedState[0] + ' rotation ' + JSON.stringify(predictedState[7]) + ' position ' + JSON.stringify(predictedState[6]) + ' keyState' + JSON.stringify(predictedState[1]));
@@ -1941,6 +2089,11 @@ function animate(ts) {
           //      console.log('InterPhysAnim');
                 g_Player.position.lerpVectors(/*{x:0, y:0,z:0,_x:0,_y:0,_z:0}*/state0[16]/*t0*/,/*t1*//*{x:0, y:0,z:0,_x:0,_y:0,_z:0}*/state1[16], alpha )
                 THREE.Quaternion.slerp( state0[15], state1[15], g_PlayerObject.quaternion, alpha );
+
+
+
+
+
           //      console.log(state0.length)
           //      console.log (['state0[15] instanceof THREE.Quaternion ', state0[15] instanceof THREE.Quaternion, JSON.stringify(state0[15]), JSON.stringify(state1[15]), JSON.stringify(g_PlayerObject.quaternion), alpha])
 

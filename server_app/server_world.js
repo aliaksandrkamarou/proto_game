@@ -1,6 +1,7 @@
 'use strinct';
 var THREE = require('three');
 var fs = require('fs');
+var path = require ('path');
 var Player = require('../share/Player');
 var cameraControl = require('../share/cameraControl');
 var checkRayCast = require('../share/checkRayCast');
@@ -60,8 +61,8 @@ var OIMOmeshs = (scene_world_bodys_meshs.meshs);
 
 var players = [];
 var objects = [];
-var postServerMessages = [];
-var serverSentTimes = new Array(200)
+var postServerMessages = [];//[1,1,1];
+var serverSentTimes = new Array(100)
 serverSentTimes.fill(0);
 
 
@@ -89,8 +90,9 @@ fs.readFile('c:/proto_game/client_app/droid.js', 'utf-8', function (err, content
 //var jsonContent = JSON.parse(content);
 //geometryTemplate = JSONloader.parse(jsonContent).geometry;
 
-
-var content = fs.readFileSync('c:/proto_game/models/Y_Bot/Y_Bot_v2.json', 'utf-8');
+//console.log(path.normalize(process.cwd()))
+//console.log(__dirname)
+var content = fs.readFileSync(process.cwd()+'/models/Y_Bot/Y_Bot_v2.json', 'utf-8');
 var jsonContent = JSON.parse(content);
 var templates = JSONloader.parse(jsonContent);
 geometryTemplate = templates.geometry;
@@ -317,7 +319,7 @@ function objectForPID(id){
 var renderPlayers = function(objects, delta, elapsedTimeAfterGetDelta) {
 
 
-
+//console.log('postServerMessages '+ postServerMessages.length)
     var ptime =  process.hrtime(); // hack
     var currentTime = (ptime[0]+  1e-9 * ptime[1])
  //   console.log(currentTime +' vs '+serverSentTimes[0])
@@ -427,7 +429,7 @@ var renderPlayers = function(objects, delta, elapsedTimeAfterGetDelta) {
 */
             if (playerItem.isTimeDelayBufferReady || !isServerInterpolation) {
 
-                console.log('playerItem.inputStates.length' + playerItem.inputStates.length);
+            //    console.log('playerItem.inputStates.length ' + playerItem.inputStates.length);
 
 
                 while (playerItem.inputStates.length > 0){
@@ -448,25 +450,25 @@ var renderPlayers = function(objects, delta, elapsedTimeAfterGetDelta) {
                     playerItem.userData.numberSteps = state[11];
                     playerItem.userData.timeReminder = state[12];
 
-                    console.log('numberSteps ' + state[11] + ' vs delta ' + state[5] )
+                  //  console.log('numberSteps ' + state[11] + ' vs delta ' + state[5] )
 
 
                    // if
 
                     if (state[11] == 0/*playerItem.userData.last_client_delta < innerDelta*/){
                     //    console.log('playerItem.userData.last_client_delta < innerDelta')
-
+////////////////////////////////////////////////////////////////////////////
                         //innerDelta -= playerItem.userData.last_client_delta;
 
-                        checkKeyStates(playerItem,playerItem.userData.last_client_delta )
-                        cameraControl(playerItem);
+                       // checkKeyStates(playerItem,playerItem.userData.last_client_delta )
+                   //     cameraControl(playerItem);
                         //playerItem.userData.camera.updateProjectionMatrix(); //already done onResize and on connect
-                        playerItem.userData.camera.updateMatrixWorld(); // update camera since it's not a child of scene //
-                        playerItem.userData.cameraJSON = playerItem.userData.camera.toJSON();
+                   //     playerItem.userData.camera.updateMatrixWorld(); // update camera since it's not a child of scene //
+                   //     playerItem.userData.cameraJSON = playerItem.userData.camera.toJSON();
 
-                        console.log('ts_client '+ playerItem.userData.ts_client + ' rotation '+ JSON.stringify(playerItem.userData.rotation) + ' position '+ JSON.stringify(playerItem.userData.position)+ ' innerDelta '+ innerDelta +' keyState '+ JSON.stringify(playerItem.userData.keyState))
+                   //     console.log('ts_client '+ playerItem.userData.ts_client + ' rotation '+ JSON.stringify(playerItem.userData.rotation) + ' position '+ JSON.stringify(playerItem.userData.position)+ ' innerDelta '+ innerDelta +' keyState '+ JSON.stringify(playerItem.userData.keyState))
 
-                        postServerMessages.some(function (elem, idx, arr) {
+    /*                    postServerMessages.some(function (elem, idx, arr) {
 
                             if (elem.playerId == playerItem.userData.playerId) {
                                 arr[idx] = JSON.parse(JSON.stringify(playerItem.userData));
@@ -477,26 +479,32 @@ var renderPlayers = function(objects, delta, elapsedTimeAfterGetDelta) {
                             }
 
                         });
-
+*/
+                        postServerMessages.push(JSON.parse(JSON.stringify(playerItem.userData)))
 
                         //arr.splice(idx,1);
                         playerItem.inputStates.shift();
+                        //////////
                     } else if (state[11] > 0){
 
 
 
 
-                        console.log(' steps to go '+ state[11])
+                 //       console.log(' steps to go '+ state[11])
                         state[11] -= 1 ; //decrease remained physics update count
 
-                        var d = Math.min(state[5],delta) //delta is a step here
-                        state[5] -= d; // decrease remained animation update time
+                       // var d = Math.min(state[5],delta) //delta is a step here
+                       // state[5] -= d; // decrease remained animation update time
                             //  playerItem.userData.last_client_delta -= innerDelta;
                             //state[5] -= innerDelta;
 
 
 
-                            checkKeyStates(playerItem, d);
+                        checkKeyStates(playerItem, delta);
+                        cameraControl(playerItem);
+                        //playerItem.userData.camera.updateProjectionMatrix(); //already done onResize and on connect
+                        playerItem.userData.camera.updateMatrixWorld(); // update camera since it's not a child of scene //
+                        playerItem.userData.cameraJSON = playerItem.userData.camera.toJSON();
 
                             break; // exit loop
 

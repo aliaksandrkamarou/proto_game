@@ -66,12 +66,13 @@ function initWorld () {
     }
     */
 
-    var planeGeometry = new THREE.PlaneGeometry(1000 / 0.02, 1000 / 0.02);
-    planeGeometry.rotateX ( -Math.PI / 2 );
+    var planeGeometry = new THREE.PlaneGeometry(1000 , 1000 );
+    planeGeometry.rotateX ( 3*Math.PI / 2 );
     var planeMaterial = new THREE.MeshPhongMaterial({
      //   map: THREE.ImageUtils.loadTexture('bg.jpg'),
-        color: 0xffffff,
-        specular: 0x101010
+        color: 0x404040
+        //specular: 0x101010,
+        //depthWrite: false
 
 });
 
@@ -82,14 +83,14 @@ function initWorld () {
  //   planeMaterial.map.repeat.y = 300;
  //   planeMaterial.map.wrapS = THREE.RepeatWrapping;
  //   planeMaterial.map.wrapT = THREE.RepeatWrapping;
-//   var plane = new THREE.Mesh(planeGeometry, planeMaterial); // new physijs.Plane(planeGeometry, planeMaterial);  //
+   var plane =  new Physijs.PlaneMesh(planeGeometry, planeMaterial,0);  //
 
-  var plane =  new Physijs.BoxMesh(
-        new THREE.BoxGeometry(1000 / 0.02, 0.001, 1000 / 0.02),
-      pMaterial,
-        0 )// mass
- plane.position.setY(-0.1);
-    plane.updateMatrix()
+ // var plane =  new Physijs.BoxMesh(
+ //       new THREE.BoxGeometry(1000 / 0.02, 0.001, 1000 / 0.02),
+ //     pMaterial,
+  //      0 )// mass
+// plane.position.setY(-0.1);
+ //   plane.updateMatrix()
    // plane.rotation.set(  -Math.PI / 2,0, 0 );// = -Math.PI / 2; // r_76
    // plane.updateMatrix();
   //  plane.__dirtyRotation = true;
@@ -107,12 +108,12 @@ function initWorld () {
 
     var meshArray = [];
 //    var bodys =[];
-   var geometry = new THREE.CubeGeometry(1, 1, 1);
+   var geometry = new THREE.CubeGeometry(1, 4, 1);
    //var cMaterial = Physijs.createMaterial(new THREE.MeshLambertMaterial({color: 0xffffff * Math.random()}), 0.1,0.1)
 //geometry.scale(2,2,2);
     var w, h, d;
     var x, y, z;
-    w=1; h= 1; d=1
+    w=1; h= 1; d=1;
 
     //bodys[i] = world.add({type:'box', size:[w,h,d], pos:[x,y,z], move:true, world:world});
     //meshs[i] = new THREE.Mesh( geos.box, mats.box );
@@ -120,11 +121,11 @@ function initWorld () {
 
 
     for (var i = 0; i < 10; i++) {
-        meshArray[i] = new Physijs.BoxMesh(geometry, Physijs.createMaterial(new THREE.MeshLambertMaterial({color: 0xffffff * Math.random()}), 0.1,0.1), 0);
+        meshArray[i] = new Physijs.BoxMesh(geometry, Physijs.createMaterial(new THREE.MeshLambertMaterial({color: 0xffffff * Math.random()}), 0.5,0.5), 0);
     //    meshArray[i] = new THREE.Mesh(geometry, new THREE.MeshPhongMaterial({color: 0xffffff * Math.random()})); // new physijs.Box(geometry, new THREE.MeshLambertMaterial({color: 0xffffff * Math.random()}),{mass:1});//
 
         x = i % 2 * 5 * 1 - 2.5 * 1;
-        y = 1.1 ;
+        y = 0.15;
         z = -1 * i * 4 * 1;
         meshArray[i].position.set(x,y,z);
         meshArray[i].scale.set( w, h, d );
@@ -134,6 +135,9 @@ function initWorld () {
         //meshArray[i].receiveShadow = true;
         meshArray[i].name = 'cube';
         scene.add(meshArray[i]);
+
+        //var sh  =new THREE.ShadowMesh( meshArray[i] );
+        //scene.add(sh)
         //raycaster
         //objects.push(meshArray[i]);
     }

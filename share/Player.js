@@ -39,7 +39,7 @@
         //this.scale.set(0.02, 0.02, 0.02); //set
 
         this.camera = new THREE.PerspectiveCamera(); //to be updated from player's side
-        this.camera.position.set(4, 4, 7);
+        this.camera.position.set(2, 4, 7);
         this.camPos = this.camera.position
         // this.camera.aspect = 0.5;
         this.camera.lookAt(new THREE.Vector3(0, 0, 0));
@@ -55,9 +55,10 @@
 
 //
         this.keyState = []//{};
+        this.keyStateHitOnce = [];
         this.mouseState = {};
         this.moveSpeed = 100;
-        this.turnSpeed = 1;
+        this.turnSpeed = 4.2*Math.PI;
 
         this.moveState = {
 
@@ -76,16 +77,33 @@
 
 
         mesh.actions = {
+            attack: mesh.mixer.clipAction(mesh.geometry.animations[0]),
             stand: mesh.mixer.clipAction(mesh.geometry.animations[1]),
             run: mesh.mixer.clipAction(mesh.geometry.animations[2]),
             back: mesh.mixer.clipAction(mesh.geometry.animations[3]),
-            attack: mesh.mixer.clipAction(mesh.geometry.animations[4])//,
-   //         painOne: mesh.mixer.clipAction(mesh.geometry.animations[3]),
-     //       wave: mesh.mixer.clipAction(mesh.geometry.animations[10])
+      //    painOne: mesh.mixer.clipAction(mesh.geometry.animations[3]), // turn left
+     //     wave: mesh.mixer.clipAction(mesh.geometry.animations[10]) // turn right
+            turnL: mesh.mixer.clipAction(mesh.geometry.animations[4]),
+            turnR: mesh.mixer.clipAction(mesh.geometry.animations[5]),
+            action1: mesh.mixer.clipAction(mesh.geometry.animations[6]),
+            action2: mesh.mixer.clipAction(mesh.geometry.animations[7])
+
+                // jump up
+            // jump loop
+            // jump down
+            // walk left
+            // walk right
+            // f_left
+            // f_right
+            // b_left
+            // b_right
+            //looking
+            // charge
+            // ganggam
 
         };
 
-     //   mesh.actions.stand.play();
+       // mesh.actions.action1.play();
 
 
         // this.actions = {};
@@ -94,7 +112,11 @@
             standTime: mesh.actions.stand.time,
             runTime: mesh.actions.run.time,
             backTime: mesh.actions.back.time,
-            attackTime: mesh.actions.attack.time//,
+            attackTime: mesh.actions.attack.time,
+            turnLTime: mesh.actions.turnL.time,
+            turnRTime: mesh.actions.turnR.time,
+            action1Time: mesh.actions.action1.time,
+            action2Time: mesh.actions.action2.time
        //     painOneTime: mesh.actions.painOne.time,
          //   waveTime: mesh.actions.wave.time
 
@@ -142,8 +164,10 @@
 
 
 
+
+
         //
-        this.r =  2.4;
+        this.r =  7.3;
 
 
 
