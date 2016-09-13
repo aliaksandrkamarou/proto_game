@@ -47,10 +47,10 @@
         this.playerCameraDist = {
             distance: 5, //5
             x: 0, // angle?
-            y: 45,
+            y: 10,
             z: 0
         };
-        this.isCameraFollow = false;
+        this.isCameraFollow = false||true;
 
 
 //
@@ -59,6 +59,8 @@
         this.mouseState = {};
         this.moveSpeed = 100;
         this.turnSpeed = 4.2*Math.PI;
+
+        //this.showHitBox = true;
 
         this.moveState = {
 

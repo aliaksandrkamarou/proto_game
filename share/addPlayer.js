@@ -7,12 +7,12 @@
         // Node. Does not work with strict CommonJS, but
         // only CommonJS-like environments that support module.exports,
         // like Node.
-      module.exports = factory(require('three'),require('../lib/physi'),require('./Player'));
+      module.exports = factory(require('three'),require('../lib/physi'),require('./Player'),require('./attachHitBox'));
     } else {
         // Browser globals (root is window)
-        root.addPlayer = factory(root.THREE, root.Physijs, root.Player);
+        root.addPlayer = factory(root.THREE, root.Physijs, root.Player, root.attachHitBox);
     }
-}(this, function (THREE, Physijs, Player)
+}(this, function (THREE, Physijs, Player, attachHitBox)
 
 {
     'use strict';
@@ -168,6 +168,15 @@ function addPlayer (data, geometryTemplate, materialTemplate, scene, objects, pl
         }
 
     });
+
+
+
+
+    attachHitBox(playerMesh, scene, false);
+
+
+
+
 
 
 
