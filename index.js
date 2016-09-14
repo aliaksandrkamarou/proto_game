@@ -1,4 +1,5 @@
 //var log = require('why-is-node-running') // should be your first require
+'use strict';
 var express = require('express');
 var app = express();
 var server = require('http').createServer(app);
@@ -12,7 +13,7 @@ var fs = require('fs');
 
 var world = require('./server_app/server_world');
 //var async = require('async');
-var serverRenderer = require('./server_app/serverRenderer');
+//var serverRenderer = require('./server_app/serverRenderer');
 //var Worker = require("tiny-worker");
 //var Worker = require('pseudo-worker');
 //var activeHandles = require('active-handles');
@@ -56,10 +57,19 @@ var counter = 0;
 io.on('connection', function(socket){
     console.log('Client connected: '+ socket.id);
 
+
+
+
   // CREATE NEW PLAYER on CLIENT
     var id = socket.id;  // assign player id as socket.id
+
+    for (var i = 0; i < world.players.length; i++) { // old players
+        if (world.players[i].playerId != id)
+            socket.emit('addOtherPlayer', world.players[i]);
+    }
+
     socket.playerId = id;  // костыль для addPlayer
-    var player = world.addPlayer(socket, world.geometryTemplate,world.multiMaterialTemplate, world.scene, world.objects, world.players, true);   // returns player + side effect(!) add player to players, so it can be retrived by world.playerForId
+    var player = world.addPlayer(socket, world.geometryTemplate,world.multiMaterialTemplate, world.scene, null/*world.objects*/, world.players, true);   // returns player + side effect(!) add player to players, so it can be retrived by world.playerForId
 
    // world.postServerMessages.push (JSON.parse(JSON.stringify(player)));
    // world.postServerMessages.push (player);
@@ -84,12 +94,13 @@ io.on('connection', function(socket){
  //END OF BROADCAST NEW PLAYER to OTHER CLIENTS
 
 // REQUEST OLD PLAYERS Handler
+    /*
     socket.on('requestOldPlayers', function(){
         for (var i = 0; i < world.players.length; i++){
             if (world.players[i].playerId != id)
                 socket.emit('addOtherPlayer', world.players[i]);
         }
-    });
+    });*/
 //
 
     // remove player
@@ -173,7 +184,9 @@ io.on('connection', function(socket){
 
    //     if(/*world.isServerInterpolation*/ true) {
 
-            var playerMesh = world.objectForPID(socket.id)
+            var playerMesh = world.scene.getObjectByName(socket.id)//world.objectForPID(socket.id)
+
+            if (playerMesh.inputStates.length > 3) playerMesh.inputStates.splice(0,3);
             playerMesh.inputStates.push(state);
       //  console.log(state[9])
 
@@ -517,16 +530,23 @@ function looper () {
     if (g_timeReminder >= simulateDeltaTime) {
      //   console.log('g_timeReminder ' + g_timeReminder)
         //console.log('simulate')
-        world.renderPlayers(world.objects, simulateDeltaTime, clock.elapsedTime);
+        world.renderPlayers(world.players, simulateDeltaTime, clock.elapsedTime);
         world.scene.setFixedTimeStep(simulateDeltaTime );
         world.scene.simulate(simulateDeltaTime , 1);
         g_timeReminder -= simulateDeltaTime;
+
+        sendUpdateToClient()
+
+
     }
  //   console.log('g_delta   '+g_delta+'  delta '+delta+ ' g_lasttick  '+g_lastTick+ '22222     '+clock.elapsedTime)
     g_delta = delta;
    // console.log(g_delta)
  //   g_serverLastUpdateTime = clock.elapsedTime;
     serverLastUpdateTime = clock.elapsedTime;// copy primitive //call order is important here 3. // call after getDelta() is important. + call after render is important
+
+
+
     //console.log(serverLastUpdateTime)
 //    activeHandles.print();
  //   console.log('delta ' + delta + ' lastTick ' + lastTick);
@@ -579,7 +599,8 @@ phy();
 
 
 var clockEmitter = new THREE.Clock();
-setInterval(function sendUpdateToClient(){
+//setInterval(
+    function sendUpdateToClient(){
 
     var ptime =  process.hrtime(); // hack
     var serverLastSentTime = (ptime[0]+  1e-9 * ptime[1])
@@ -629,4 +650,5 @@ setInterval(function sendUpdateToClient(){
    }
  //   console.log('world.postServerMessages '+ world.postServerMessages.length)
   // } else {console.log('!!!!!!!!!!NOT EMIT!')}
-},10)
+}
+    //,10)

@@ -2,7 +2,7 @@
 
 ///////////GLOBALS
 
-var renderer, raycaster, objects = [];
+var renderer, raycaster;//, objects = [];
 
 var sphere;
 var players = [];
@@ -112,7 +112,9 @@ spotLight.intensity = .5;
 //var shadowHelper = new THREE.CameraHelper( light.shadow.camera );
 //var shadowHelper = new THREE.CameraHelper( spotLight.shadow.camera );
 var spotLightHelper = new THREE.SpotLightHelper( spotLight )
-scene.add(spotLightHelper);
+//scene.add(spotLightHelper);
+var hemiLight = new THREE.HemisphereLight( 0xffFfbb, 0x080820, 1 );
+//scene.add(hemiLight);
 
 //scene.add(ls)
 //scene.add( spotLight );
@@ -293,6 +295,7 @@ function Player(mesh, id) {
 };
 
 */
+/*
 function objectForPID(id) {
 
     var object;
@@ -308,7 +311,7 @@ function objectForPID(id) {
 
     return object;
 };
-
+*/
 
 function playerForId(id) {
 
@@ -342,16 +345,15 @@ var removeOtherPlayer = function (data) {  // need to delete two objects!!!
         players.splice(indexP, 1);
     }
 
+    scene.remove(scene.getObjectByName(data.playerId)); // remove from scene
 
-    var object = objectForPID(data.playerId);
 
-    scene.remove(object);
+ //   var object = objectForPID(data.playerId);
+  //  var indexOBJ = objects.indexOf(object);
 
-    var indexOBJ = objects.indexOf(object);
-
-    if (indexOBJ > -1) {
+  /*  if (indexOBJ > -1) {
         objects.splice(indexOBJ, 1);
-    }
+    }*/
 
 
     console.log('PAYERS CNT ' + players.length + ' OBJECTS CNT ' + objects.length + ' SCENE OBJ CNT ' + scene.children.length);
@@ -469,7 +471,7 @@ var updateOnePlayer = function (playerData, ts) {
 
 
 
-    var player = objectForPID(playerData.playerId);
+    var player = scene.getObjectByName(playerData.playerId) //objectForPID(playerData.playerId); //321
 
    // player.userData.serverLastSentTime = serverLastSentTime;
 
@@ -715,6 +717,11 @@ var updateOnePlayer = function (playerData, ts) {
             g_Player.camera.copy(objectLoader.parse(playerData.cameraJSON));
            // g_Player.camera = camera;
 
+            scene.getObjectByName('sphere1').position.copy(playerData.raySpheres.origin);
+            scene.getObjectByName('sphere2').position.copy(playerData.raySpheres.fromCamera);
+            scene.getObjectByName('sphere3').position.copy(playerData.raySpheres.fromOrigin);
+
+
 
             //physijs
 
@@ -848,7 +855,7 @@ var hex = 0xffff00;
 
 var arrowHelper = new THREE.ArrowHelper(dir, origin, length, hex);
 arrowHelper.name = 'arrowHelper';
-scene.add(arrowHelper);
+//scene.add(arrowHelper);
 
 
 var geometry1 = new THREE.SphereGeometry(5, 8, 8);
@@ -861,12 +868,20 @@ scene.add(sphere1);
 
 
 var geometry2 = new THREE.SphereGeometry(6, 4, 4);
-var material2 = new THREE.MeshLambertMaterial({color: 0xffffff});
+var material2 = new THREE.MeshLambertMaterial({color: 0x00ffff});
 var sphere2 = new THREE.Mesh(geometry2, material2);
 sphere2.scale.set(.01, .01, .01);
 sphere2.name = 'sphere2';
 sphere2.castShadow = true;
 scene.add(sphere2);
+
+var geometry3 = new THREE.SphereGeometry(6, 4, 8);
+var material3 = new THREE.MeshLambertMaterial({color: 0x00ff00});
+var sphere3 = new THREE.Mesh(geometry3, material3);
+sphere3.scale.set(.01, .01, .01);
+sphere3.name = 'sphere3';
+sphere3.castShadow = true;
+scene.add(sphere3);
 
 //LINE
 /*
@@ -928,12 +943,12 @@ for (var i = 0; i < 100; i++) {
 
 
 //var isPhysics = false||true;
-var isPrediction = false //|| true;
+var isPrediction = false || true;
 var isServerUpdate = false || true;
 //var isAnim = false ||true;
-var isReconciliation = false// ||true;
-var isInterpolation = false //|| true;
-var isInterPhysAnim = false// || true;
+var isReconciliation = false ||true;
+var isInterpolation = false || true;
+var isInterPhysAnim = false || true;
 
 var g_InterpolationMs = 1000;
 
@@ -2308,9 +2323,9 @@ statsRTT.showPanel(1)
 window.addEventListener('DOMContentLoaded', function () {
         document.body.appendChild(renderer.domElement);
         //var div = document.createElement('div');
-        document.body.appendChild(stats.dom).setAttribute("style", "background-color:red; font-size:2em; top: 140px; position: absolute");
-        document.body.appendChild(stats2.dom).setAttribute("style", "background-color:red; font-size:2em; top: 190px; position: absolute");
-        document.body.appendChild(statsRTT.dom).setAttribute("style", "background-color:red; font-size:2em; top: 240px; position: absolute");
+    //    document.body.appendChild(stats.dom).setAttribute("style", "background-color:red; font-size:2em; top: 140px; position: absolute");
+    //    document.body.appendChild(stats2.dom).setAttribute("style", "background-color:red; font-size:2em; top: 190px; position: absolute");
+    //    document.body.appendChild(statsRTT.dom).setAttribute("style", "background-color:red; font-size:2em; top: 240px; position: absolute");
 
 
 

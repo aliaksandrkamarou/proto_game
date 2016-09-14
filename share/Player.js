@@ -39,15 +39,16 @@
         //this.scale.set(0.02, 0.02, 0.02); //set
 
         this.camera = new THREE.PerspectiveCamera(); //to be updated from player's side
+        //mesh.add(this.camera)
         this.camera.position.set(2, 4, 7);
         this.camPos = this.camera.position
         // this.camera.aspect = 0.5;
         this.camera.lookAt(new THREE.Vector3(0, 0, 0));
         this.cameraJSON = this.camera.toJSON();
         this.playerCameraDist = {
-            distance: 5, //5
+            distance: 3, //5
             x: 0, // angle?
-            y: 10,
+            y: 40,
             z: 0
         };
         this.isCameraFollow = false||true;
@@ -71,8 +72,11 @@
         this.mouse2D = new THREE.Vector2();
 
 
-        this.raycaster = new THREE.Raycaster();
-        this.raycaster.linePrecision = 0; // do NOT try to interact with lines
+        mesh.raycaster = new THREE.Raycaster();//TODO: remove from client side
+        mesh.raycaster.linePrecision = 0; // do NOT try to interact with lines
+
+        mesh.raycaster2 = new THREE.Raycaster();//TODO: remove from client side
+        mesh.raycaster2.linePrecision = 0; // do NOT try to interact with lines
 
 
         mesh.mixer = new THREE.AnimationMixer(mesh);
@@ -128,6 +132,7 @@
 
 
         this.intersected_scene_id = undefined;
+        this.intersected2_scene_id = undefined;
 
         this.pending_inputs = [];
 
@@ -136,6 +141,8 @@
 
         this.last_client_delta = 0;
         mesh.phyDelayReminder = 0;
+
+        this.raySpheres = {origin :new THREE.Vector3() ,fromCamera :new THREE.Vector3(), fromOrigin: new THREE.Vector3()}
 
 
         this.serverLastSentTime = undefined;

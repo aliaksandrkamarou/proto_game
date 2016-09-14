@@ -19,7 +19,7 @@
 
 
 
-function addPlayer (data, geometryTemplate, materialTemplate, scene, objects, players, isPhysics) {
+function addPlayer (data, geometryTemplate, materialTemplate, scene, rayObjects, players, isPhysics) {
 
 /*
     var material = new THREE.MeshPhongMaterial({
@@ -246,7 +246,7 @@ function addPlayer (data, geometryTemplate, materialTemplate, scene, objects, pl
     cube.position.copy(playerMesh.position);
     cube.rotation.copy( playerMesh.rotation);
     cube.name = 'greenCube';
-*/
+*///playerMesh.add(player.camera);
     scene.add(playerMesh)
     playerMesh.setDamping((1 - 1e-7), (1 - 1e-7)) // works only after scene.add()
 
@@ -272,8 +272,11 @@ function addPlayer (data, geometryTemplate, materialTemplate, scene, objects, pl
     //playerMesh.add(axisHelper);
   //  scene.add(playerMesh);
     playerMesh.inputStates = [];
-    objects.push(playerMesh);
+ //   rayObjects.push(playerMesh); //
     players.push(player);
+
+
+
 
 
 

@@ -40,7 +40,9 @@
     <script src="../share/cameraControl.js"></script>
     <script src="../share/checkRayCast.js"></script>
     <script src="../share/checkKeyStates.js"></script>
+    <script src="../share/attachHitBox.js"></script>
     <script src="../share/addPlayer.js"></script>
+
 
     <script src="predictPlayer.js"></script>
     <script src="client_world_droid.js"></script>
@@ -80,7 +82,7 @@ function onready() {
     socket.on('connect', function () {
         console.log('client connected ID ' + socket.id);
         // loadWorld();
-        socket.emit('requestOldPlayers', {});
+      //  socket.emit('requestOldPlayers', {});
 
 
         function RTT() {
@@ -104,7 +106,7 @@ function onready() {
         console.log(data)
 
 
-        g_Player = addPlayer(data, geometryTemplate, multiMaterialTemplate, scene, objects, players, true); // cant USE CLIENT SOCKET.ID as of it may differ from server socket id https://github.com/socketio/socket.io/issues/2405
+        g_Player = addPlayer(data, geometryTemplate, multiMaterialTemplate, scene, null/*objects*/, players, true); // cant USE CLIENT SOCKET.ID as of it may differ from server socket id https://github.com/socketio/socket.io/issues/2405
         console.log('SER/DE')
         console.log(JSON.parse(JSON.stringify(g_Player)))
         console.log(data);
@@ -117,7 +119,7 @@ function onready() {
 
 
 
-        g_PlayerObject = objectForPID(g_Player.playerId);
+        g_PlayerObject = scene.getObjectByName(g_Player.playerId)//objectForPID(g_Player.playerId);//321
 
         g_Player.camera = objectLoader.parse(data.cameraJSON);
         g_Player.camera.position.set(data.camPos.x, data.camPos.y, data.camPos.z)
@@ -132,7 +134,7 @@ function onready() {
     });
 
     socket.on('addOtherPlayer', function (data) { //TODO: PHYSICS on/off
-        var player = addPlayer(data, geometryTemplate, multiMaterialTemplate, scene, objects, players, true);
+        var player = addPlayer(data, geometryTemplate, multiMaterialTemplate, scene, null/*objects*/, players, true);
 
         player.local_timer = data.ts_client;
         player.ts_client = data.ts_client;

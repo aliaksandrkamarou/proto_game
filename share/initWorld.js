@@ -20,7 +20,7 @@
 
 
 
-function initWorld () {
+function initWorld (rayObjects) {
     var scene = new Physijs.Scene({fixedTimeStep: 1/10 });
    // scene.setGravity({x:0,y:0,z:0});
   //  var scene = new THREE.Scene();

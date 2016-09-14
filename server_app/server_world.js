@@ -1,4 +1,4 @@
-'use strinct';
+'use strict';
 var THREE = require('three');
 var fs = require('fs');
 var path = require ('path');
@@ -24,6 +24,9 @@ var initWorld = require('../share/initWorld');
 var initGeoMat = require ('../share/initGeoMat');
 
 var addPlayer = require('../share/addPlayer');
+
+var attachHitBox = require('../share/attachHitBox')
+
 
 var isServerInterpolation = false//||true;
 
@@ -241,16 +244,16 @@ var removePlayer = function(player){
 
 //////////
 
-    var object = objectForPID(player.playerId);
+  //  var object = objectForPID(player.playerId);
 
-    scene.remove(object);
+    scene.remove(scene.getObjectByName(player.playerId));
 
-    var indexOBJ = objects.indexOf(object);
+ /*   var indexOBJ = objects.indexOf(object);
 
     if (indexOBJ > -1) {
         objects.splice(indexOBJ, 1);
     }
-
+*/
 
 
     postServerMessages.some(function(el , idx, arr){
@@ -261,7 +264,7 @@ var removePlayer = function(player){
 
 
 
-    console.log ('PAYERS CNT '+ players.length+' OBJECTS CNT '+ objects.length + ' SCENE OBJ CNT '+ scene.children.length );
+    console.log ('PAYERS CNT '+ players.length + ' SCENE OBJ CNT '+ scene.children.length );
 
 };
 /*
@@ -293,7 +296,7 @@ var playerForId = function(id){
 };
 
 
-
+/*
 function objectForPID(id){
 
     var object;
@@ -309,8 +312,43 @@ function objectForPID(id){
 
     return object;
 };
+*/
+function preSender(playerItem, postServerMessages) {
+
+    while (playerItem.inputStates.length > 0) {
+        var state = playerItem.inputStates[0]
+        //     console.log('!!!pre State '+ state[0] + ' keyState '+ JSON.stringify(state[1]) + ' ratation '+ JSON.stringify(playerItem.userData.rotation))
+        //   if (state[1][68]){ console.log ('debug')};
+
+        playerItem.userData.ts_client = state[0];
+        playerItem.userData.keyState = state[1];
+        playerItem.userData.mouseState = state[2];
+        playerItem.userData.mouse2D = state[3];
+        playerItem.userData.ts_server = state[4];    // serverLastUpdate
+        playerItem.userData.last_client_delta = state[5];
+        //DO NOT UNCOMMENT -- update DUPLICATION player.position.set(state[6].x,state[6].y,state[6].z)
+        //DO NOT UNCOMMENT -- player.rotation.set(state[7].x,state[7].y,state[7].z)
+        playerItem.userData.isCameraFollow = state[8];
+
+        playerItem.userData.numberSteps = state[11];
+        playerItem.userData.timeReminder = state[12];
+
+        //  console.log('numberSteps ' + state[11] + ' vs delta ' + state[5] )
 
 
+        // if
+
+        if (state[11] == 0/*playerItem.userData.last_client_delta < innerDelta*/) {
+
+            postServerMessages.push(JSON.parse(JSON.stringify(playerItem.userData)))
+
+            //arr.splice(idx,1);
+            playerItem.inputStates.shift();
+
+
+        }
+    }
+}
 
 
 
@@ -326,8 +364,9 @@ var renderPlayers = function(objects, delta, elapsedTimeAfterGetDelta) {
 
 
    // updateOimoPhysics(OIMOworld, OIMObodys, OIMOmeshs);
-    objects.forEach(function (playerItem) {
+    objects.forEach(function (player) {
       //  console.log('hello!!!!!!!!!!')
+        var playerItem = scene.getObjectByName(player.playerId)
 
         var innerDelta = delta;
 
@@ -433,7 +472,8 @@ var renderPlayers = function(objects, delta, elapsedTimeAfterGetDelta) {
 
 
                 while (playerItem.inputStates.length > 0){
-                    var state = playerItem.inputStates[0]
+
+                    var state = playerItem.inputStates[0];
                //     console.log('!!!pre State '+ state[0] + ' keyState '+ JSON.stringify(state[1]) + ' ratation '+ JSON.stringify(playerItem.userData.rotation))
                  //   if (state[1][68]){ console.log ('debug')};
 
@@ -479,11 +519,13 @@ var renderPlayers = function(objects, delta, elapsedTimeAfterGetDelta) {
                             }
 
                         });
-*/
-                        postServerMessages.push(JSON.parse(JSON.stringify(playerItem.userData)))
+
+                        */
+                      postServerMessages.push(JSON.parse(JSON.stringify(playerItem.userData)))
 
                         //arr.splice(idx,1);
-                        playerItem.inputStates.shift();
+                       playerItem.inputStates.shift();
+                     //   console.log(playerItem.playerId + ' ' + playerItem.inputStates.length)
                         //////////
                     } else if (state[11] > 0){
 
@@ -505,6 +547,10 @@ var renderPlayers = function(objects, delta, elapsedTimeAfterGetDelta) {
                         //playerItem.userData.camera.updateProjectionMatrix(); //already done onResize and on connect
                         playerItem.userData.camera.updateMatrixWorld(); // update camera since it's not a child of scene //
                         playerItem.userData.cameraJSON = playerItem.userData.camera.toJSON();
+
+
+                        //raycast after camera update!!!!!!!
+                        checkRayCast(playerItem, scene)
 
                             break; // exit loop
 
@@ -997,7 +1043,7 @@ module.exports.addPlayer = addPlayer;
 module.exports.removePlayer = removePlayer;
 //module.exports.updatePlayerData = updatePlayerData;
 module.exports.playerForId = playerForId;
-module.exports.objectForPID = objectForPID;
+//module.exports.objectForPID = objectForPID;
 
 //module.exports.onKeyDown = onKeyDown;
 //module.exports.onKeyUp = onKeyUp;
@@ -1010,7 +1056,7 @@ module.exports.resetMoveStates = resetMoveStates;
 
 module.exports.jsonContent = jsonContent;
 
-module.exports.objects = objects;
+//module.exports.objects = objects;
 
 module.exports.scene = scene;
 
