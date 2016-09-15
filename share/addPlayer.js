@@ -52,7 +52,7 @@ function addPlayer (data, geometryTemplate, materialTemplate, scene, rayObjects,
  //   var playerMesh =  new Physijs.SkinnedBoxMesh(geometryTemplate, material);
    // if (deactivate) playerMesh._physijs.activation_state=5 // deactivate simulation
 
-
+/*
     playerMesh.addEventListener( 'collision', function( other_object, linear_velocity, angular_velocity ) {
 
         console.log('COLLISION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
@@ -68,7 +68,7 @@ function addPlayer (data, geometryTemplate, materialTemplate, scene, rayObjects,
         // other_object is the object `this` collided with
         // linear_velocity and angular_velocity are Vector3 objects which represent the velocity of the collision
     });
-
+*/
 
     //  playerMesh.scale.set(.02,.02,.02)
 

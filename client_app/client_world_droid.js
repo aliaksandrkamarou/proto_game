@@ -41,7 +41,7 @@ var geometryTemplate, multiMaterialTemplate;
 //init
 var light = new THREE.DirectionalLight(0xffffff,1);
 light.position.set(-10,10, -7)//.normalize();
-light.castShadow = true;
+//light.castShadow = true;
 
 
 //light.shadow.mapSize.width= 2048;
@@ -113,7 +113,7 @@ spotLight.intensity = .5;
 //var shadowHelper = new THREE.CameraHelper( spotLight.shadow.camera );
 var spotLightHelper = new THREE.SpotLightHelper( spotLight )
 //scene.add(spotLightHelper);
-var hemiLight = new THREE.HemisphereLight( 0xffFfbb, 0x080820, 1 );
+//var hemiLight = new THREE.HemisphereLight( 0xffFfbb, 0x080820, 1 );
 //scene.add(hemiLight);
 
 //scene.add(ls)
@@ -546,9 +546,9 @@ var updateOnePlayer = function (playerData, ts) {
 
         //ANIM
         //IDLE
-        (player.userData.keyState.some(function(el, idx, arr){
-            return el == true;
-        })) ? player.actions.stand.stop():player.actions.stand.play();
+        ((player.userData.keyState[69]|| player.userData.keyState[81]|| player.userData.keyState[87]
+            || player.userData.keyState[83]|| player.userData.keyState[68]|| player.userData.keyState[65]
+        )&& ! ((player.userData.keyState[87]&&player.userData.keyState[83]) || (player.userData.keyState[65]&&player.userData.keyState[68]) ||(player.userData.keyState[81]&&player.userData.keyState[69])  )) ? player.actions.stand.stop():player.actions.stand.play();
 
 
         //FORFARD/BACKWARD
@@ -558,6 +558,9 @@ var updateOnePlayer = function (playerData, ts) {
 
             player.actions.run.play();
             player.actions.back.stop();
+            player.actions.action1.stop();
+            player.actions.action2.stop();
+
 
         } else if (!(player.userData.keyState[38] || player.userData.keyState[87]) && (player.userData.keyState[40] || player.userData.keyState[83]))
 
@@ -565,16 +568,38 @@ var updateOnePlayer = function (playerData, ts) {
         {
             player.actions.run.stop();
             player.actions.back.play();
+            player.actions.action1.stop();
+            player.actions.action2.stop();
         }
         else {
             player.actions.back.stop();
             player.actions.run.stop();
+            if (player.userData.keyState[81] && !(player.userData.keyState[69]))
+            {
+
+
+                player.actions.action1.play()
+                player.actions.action2.stop();
+
+            } else if (!(player.userData.keyState[81]) && (player.userData.keyState[69]))
+            {
+
+
+
+                player.actions.action2.play()
+                player.actions.action1.stop();
+
+
+            }else {
+                player.actions.action2.stop()
+                player.actions.action1.stop();
+            }
         }
         ;
 
         if ((player.userData.keyState[37] || player.userData.keyState[65]) && !(player.userData.keyState[39] || player.userData.keyState[68])) {
             // left arrow or 'a' - rotate left NOT rigth
-            if(!(player.userData.keyState[87]||player.userData.keyState[83])) {
+            if(!(player.userData.keyState[87]||player.userData.keyState[83]||player.userData.keyState[81]||player.userData.keyState[69])) {
                 player.actions.turnL.play();
             } else {player.actions.turnL.stop()}
             player.actions.turnR.stop();
@@ -584,7 +609,7 @@ var updateOnePlayer = function (playerData, ts) {
 
         else if (!(player.userData.keyState[37] || player.userData.keyState[65]) && (player.userData.keyState[39] || player.userData.keyState[68])) {
             // right arrow or 'd' - rotate right NOT Left
-            if(!(player.userData.keyState[87]||player.userData.keyState[83])) {
+            if(!(player.userData.keyState[87]||player.userData.keyState[83]||player.userData.keyState[81]||player.userData.keyState[69])) {
                 player.actions.turnR.play();
             } else {player.actions.turnR.stop()}
 
@@ -599,7 +624,7 @@ var updateOnePlayer = function (playerData, ts) {
 
 
 
-
+/*
 
         if (player.userData.keyState[49]) {
             //    console.log('49!!!!!!!!!!!!')
@@ -617,7 +642,7 @@ var updateOnePlayer = function (playerData, ts) {
             player.actions.action2.stop();
         };
 
-
+*/
 
 
         //    (playerData.keyState[38] || playerData.keyState[87]) ? player.actions.run.play() :  player.actions.run.stop();
@@ -717,9 +742,9 @@ var updateOnePlayer = function (playerData, ts) {
             g_Player.camera.copy(objectLoader.parse(playerData.cameraJSON));
            // g_Player.camera = camera;
 
-            scene.getObjectByName('sphere1').position.copy(playerData.raySpheres.origin);
-            scene.getObjectByName('sphere2').position.copy(playerData.raySpheres.fromCamera);
-            scene.getObjectByName('sphere3').position.copy(playerData.raySpheres.fromOrigin);
+          //  scene.getObjectByName('sphere1').position.copy(playerData.raySpheres.origin);
+          //  scene.getObjectByName('sphere2').position.copy(playerData.raySpheres.fromCamera);
+          //  scene.getObjectByName('sphere3').position.copy(playerData.raySpheres.fromOrigin);
 
 
 
@@ -864,7 +889,7 @@ var sphere1 = new THREE.Mesh(geometry1, material1);
 sphere1.scale.set(.01, .01, .01);
 sphere1.name = 'sphere1';
 sphere1.castShadow = true;
-scene.add(sphere1);
+//scene.add(sphere1);
 
 
 var geometry2 = new THREE.SphereGeometry(6, 4, 4);
@@ -873,7 +898,7 @@ var sphere2 = new THREE.Mesh(geometry2, material2);
 sphere2.scale.set(.01, .01, .01);
 sphere2.name = 'sphere2';
 sphere2.castShadow = true;
-scene.add(sphere2);
+//scene.add(sphere2);
 
 var geometry3 = new THREE.SphereGeometry(6, 4, 8);
 var material3 = new THREE.MeshLambertMaterial({color: 0x00ff00});
@@ -881,7 +906,7 @@ var sphere3 = new THREE.Mesh(geometry3, material3);
 sphere3.scale.set(.01, .01, .01);
 sphere3.name = 'sphere3';
 sphere3.castShadow = true;
-scene.add(sphere3);
+//scene.add(sphere3);
 
 //LINE
 /*
@@ -1423,7 +1448,7 @@ function animate(ts) {
 
 
                     g_PlayerObject.getLinearVelocity(); // update _physijs.linearVelocity
-
+/*
                    // console.log ('server delta pre: '+state[5] );
                     console.log('reconcilation: keyState  client:  '+ JSON.stringify(g_Player.keyState) + ' Server '+ JSON.stringify(state[1]) + ' state[0] '+ state[0]) ;
                     (g_Player.position.x != state[6].x || g_Player.position.y != state[6].y || g_Player.position.z != state[6].z) ?  console.warn('reconcilation: position  does not match. Server: ' + JSON.stringify(g_Player.position) +'   Client:'+  JSON.stringify(state[6]) + ' ts_server ' +  g_Player.ts_server + ' state[0] '+ state[0] ) : console.log('!!!!!!!!!!!!position okay!!!!!!!!!!!! g_Player.position' + JSON.stringify(g_Player.position) + ' state[6] '+ JSON.stringify(state[6])) ;
@@ -1441,7 +1466,7 @@ function animate(ts) {
                     if(g_PlayerObject._physijs.linearVelocity.x != state[18].x || g_PlayerObject._physijs.linearVelocity.y != state[18].y ||g_PlayerObject._physijs.linearVelocity.z != state[18].z) {
                         console.warn('reconcilation: ._physijs.linearVelocity  does not match. Server: ' + JSON.stringify(g_Player._physijs.linearVelocity) +'   Client:'+  JSON.stringify(state[18])  + ' ts_server ' +  g_Player.ts_server + ' state[0] '+ state[0]  )}
                     else {console.log('!!!!!!!!!!!!._physijs.linearVelocity okay!!!!!!!!!!!! g_PlayerObject._physijs.linearVelocity' + JSON.stringify(g_PlayerObject._physijs.linearVelocity) + ' state[18] '+ JSON.stringify(state[18]))} ;
-
+*/
 
 
                 } else {
@@ -2322,13 +2347,41 @@ statsRTT.showPanel(1)
 
 window.addEventListener('DOMContentLoaded', function () {
         document.body.appendChild(renderer.domElement);
+
+
+        document.ontouchstart = function(e){
+            e.preventDefault();
+        }
+        document.ontouchmove = function(e){
+            e.preventDefault();
+        }
+
+/*
+        var manager = nipplejs.create({zone: document.body,
+            //multitouch: true,
+          //  maxNumberOfNipples: 2,
+            mode: 'static',
+            position: {left: '10%', top: '90%'}
+        });
+
+        var manager2 = nipplejs.create({zone: document.body,
+            //multitouch: true,
+            //  maxNumberOfNipples: 2,
+            mode: 'static',
+            position: {left: '90%', top: '90%'}
+        });
+*/
+       // manager.on()
+
+
+
         //var div = document.createElement('div');
     //    document.body.appendChild(stats.dom).setAttribute("style", "background-color:red; font-size:2em; top: 140px; position: absolute");
     //    document.body.appendChild(stats2.dom).setAttribute("style", "background-color:red; font-size:2em; top: 190px; position: absolute");
     //    document.body.appendChild(statsRTT.dom).setAttribute("style", "background-color:red; font-size:2em; top: 240px; position: absolute");
 
 
-
+/*
 
         console.log("touchscreen is", VirtualJoystick.touchScreenAvailable() ? "available" : "not available");
        // intitControll();
@@ -2338,6 +2391,7 @@ window.addEventListener('DOMContentLoaded', function () {
             limitStickTravel: true,
             stickRadius	: 50
         });
+
 
         joystick.controllerType = 'movement';
 
@@ -2363,6 +2417,8 @@ window.addEventListener('DOMContentLoaded', function () {
             stickRadius	: 50
         });
 
+
+
         joystick2.controllerType = 'camera'
 
 
@@ -2375,7 +2431,7 @@ window.addEventListener('DOMContentLoaded', function () {
             console.log('fire')
         })
 
-
+*/
 
 
         animate();
@@ -2387,13 +2443,18 @@ window.addEventListener('DOMContentLoaded', function () {
 window.addEventListener('resize', onWindowResize, false);
 
 function onWindowResize() {
-    var camera = g_Player.camera;
+    if(g_Player) {
+        var camera = g_Player.camera;
 
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
 
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    socket.emit('onWindowResize', camera.aspect);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        socket.emit('onWindowResize', camera.aspect);
+
+
+
+    }
 
 };
 

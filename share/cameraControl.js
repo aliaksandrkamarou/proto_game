@@ -57,14 +57,26 @@ function cameraControl (player) {
     //var targetCameraOffset = new THREE.Vector3(.3,.7,0);
 
     player.updateMatrixWorld();
-    var relativeCameraOffset = new THREE.Vector3(.3,1.,-1.9);
-    var targetCameraOffset = new THREE.Vector3(.3,.6,0);
+    var relativeCameraOffset = new THREE.Vector3(.3, 1, -1.9);
+    var targetCameraOffset = new THREE.Vector3(.3, 1 , 0);
     var cameraOffset = relativeCameraOffset.applyMatrix4( player.matrixWorld );
     var targetOffset =targetCameraOffset.applyMatrix4( player.matrixWorld );
 
+   // var alpha = 20;
+
     player.userData.camera.position.x = cameraOffset.x;
-    player.userData.camera.position.y = cameraOffset.y;
+    player.userData.camera.position.y = cameraOffset.y +  player.userData.playerCameraDist.y;
     player.userData.camera.position.z = cameraOffset.z;
+
+    //player.userData.playerCameraDist.baseY += player.userData.playerCameraDist.y * alpha
+
+
+  //  var playerCameraDist = player.userData.playerCameraDist;
+   // if (player.userData.keyState[222]) {playerCameraDist.y -= 0.01}
+   // if (player.userData.keyState[191]) playerCameraDist.y += 0.01
+   // if (!(player.userData.keyState[191]||player.userData.keyState[222])) playerCameraDist.y = 0;
+
+   // player.userData.camera.position.y += playerCameraDist.y;
 
 
   //  cameraOffset.distanceTo(player.position)*Math.cos(Math.Pi/4);

@@ -218,6 +218,17 @@ VirtualJoystick.prototype._onMove	= function(x, y)
 		if (this.controllerType == 'camera') {
 			g_Player.keyState[68] = this.right();
 			g_Player.keyState[65] = this.left();
+			//g_Player.keyState[222] = this.up();
+			//g_Player.keyState[191] = this.down();
+
+
+			g_Player.playerCameraDist.y = ((this._stickY - this._baseY)/this._baseY) * 20 ;
+			//g_Player.playerCameraDist.y += g_Player.playerCameraDist.lastY // fix with last state
+			// threshold _stickRadius/2
+			if (Math.abs(this._stickX - this._baseX) < this._stickRadius/3) {
+				g_Player.keyState[68] = false;
+				g_Player.keyState[65] = false;
+			};
 
 		}
 
@@ -304,6 +315,11 @@ VirtualJoystick.prototype._onTouchEnd	= function(event)
 	if (this.controllerType == 'camera') {
 		g_Player.keyState[68] = false;
 		g_Player.keyState[65] = false;
+		//g_Player.keyState[222] = false;
+		//g_Player.keyState[191] = false;
+
+
+		//g_Player.playerCameraDist.lastY = JSON.parse(JSON.stringify(player.userData.playerCameraDist.y)); // save offset
 
 	}
 

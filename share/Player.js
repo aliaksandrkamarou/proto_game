@@ -48,18 +48,20 @@
         this.playerCameraDist = {
             distance: 3, //5
             x: 0, // angle?
-            y: 40,
-            z: 0
+            y: 0,
+            z: 0,
+            lastY: 0
         };
         this.isCameraFollow = false||true;
 
 
-//
+        var durationCoof = 2;
+
         this.keyState = []//{};
         this.keyStateHitOnce = [];
         this.mouseState = {};
         this.moveSpeed = 100;
-        this.turnSpeed = 4.2*Math.PI;
+        this.turnSpeed = 4.2*Math.PI * (1/durationCoof);
 
         //this.showHitBox = true;
 
@@ -82,6 +84,8 @@
         mesh.mixer = new THREE.AnimationMixer(mesh);
 
 
+
+
         mesh.actions = {
             attack: mesh.mixer.clipAction(mesh.geometry.animations[0]),
             stand: mesh.mixer.clipAction(mesh.geometry.animations[1]),
@@ -89,8 +93,8 @@
             back: mesh.mixer.clipAction(mesh.geometry.animations[3]),
       //    painOne: mesh.mixer.clipAction(mesh.geometry.animations[3]), // turn left
      //     wave: mesh.mixer.clipAction(mesh.geometry.animations[10]) // turn right
-            turnL: mesh.mixer.clipAction(mesh.geometry.animations[4]),
-            turnR: mesh.mixer.clipAction(mesh.geometry.animations[5]),
+            turnL: mesh.mixer.clipAction(mesh.geometry.animations[4]).setDuration(durationCoof),
+            turnR: mesh.mixer.clipAction(mesh.geometry.animations[5]).setDuration(durationCoof),
             action1: mesh.mixer.clipAction(mesh.geometry.animations[6]),
             action2: mesh.mixer.clipAction(mesh.geometry.animations[7])
 
@@ -176,7 +180,7 @@
 
 
         //
-        this.r =  7.3;
+        this.r =  7.3 * durationCoof;
 
 
 
