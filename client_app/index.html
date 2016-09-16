@@ -7,13 +7,21 @@
         body {
             font-family: Arial, Helvetica, sans-serif;
             background: #000;
+            position: static;
+            overflow: hidden;
+            margin: 0px;
+            padding: 0px;
+            overflow-x: hidden;
+
+
         }
 
         canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
+            position: static;
+
+            overflow: hidden;
         }
+
     </style>
 
     <script src="../lib/three_r80.js"></script>
@@ -21,32 +29,28 @@
 	<script src="../lib/physijs_worker.js"></script>
     <script src="../lib/physi.js"></script>
 
-    <script src="../lib/oimo.js"></script>
-    <script src="../lib/js/controls/OrbitControls.js"></script>
     <script src="../socket.io/socket.io.js"></script>
-    <script src="../lib/js/controls/PointerLockControls.js"></script>
-    <script src="../lib/js/controls/MouseControls.js"></script>
+
     <script src = "virtualjoystick.js"></script>
 
     <script src="../lib/js/libs/stats.min.js"></script>
 
 
 
-    <script src="../share/Player.js"></script>
-    <script src="../share/initWorld.js"></script>
-
-    <script src="../share/updateOimoPhysics.js"></script>
-
-    <script src="../share/cameraControl.js"></script>
-    <script src="../share/checkRayCast.js"></script>
-    <script src="../share/checkKeyStates.js"></script>
-    <script src="../share/attachHitBox.js"></script>
-    <script src="../share/addPlayer.js"></script>
+    <script src="../share/Player.min.js"></script>
+    <script src="../share/initWorld.min.js"></script>
 
 
-    <script src="predictPlayer.js"></script>
-    <script src="client_world_droid.js"></script>
-    <script src="../Raycaster/raycaster.js"></script>
+    <script src="../share/cameraControl.min.js"></script>
+   <!-- <script src="../share/checkRayCast.js"></script>-->
+    <script src="../share/checkKeyStates.min.js"></script>
+    <script src="../share/attachHitBox.min.js"></script>
+    <script src="../share/addPlayer.min.js"></script>
+
+
+    <script src="predictPlayer.min.js"></script>
+    <script src="client_world_droid.min.js"></script>
+  <!--  <script src="../Raycaster/raycaster.js"></script>-->
 
 
 
@@ -218,6 +222,75 @@ function onready() {
                 function (data){
             console.log(data)
         } )
+
+
+    console.log("touchscreen is", VirtualJoystick.touchScreenAvailable() ? "available" : "not available");
+    // intitControll();
+
+    joystick = new VirtualJoystick({
+        //  mouseSupport	: true,
+        limitStickTravel: true,
+        stickRadius	: 50
+    });
+
+
+    /*     var joystick = new VirtualJoystick({
+     mouseSupport	: true,
+     stationaryBase	: true,
+     baseX		: window.innerWidth/5,
+     baseY		: 4*window.innerHeight/5,
+     limitStickTravel: true,
+     stickRadius	: 50
+     });
+     */
+    joystick.controllerType = 'movement';
+
+    joystick.addEventListener('touchStartValidation', function(event){
+        var touch	= event.changedTouches[0];
+        if( touch.pageX >= window.innerWidth/2 )	return false;
+        return true
+    });
+
+    joystick.addEventListener('touchStart', function(){
+        console.log('down')
+    })
+    joystick.addEventListener('touchEnd', function(){
+        console.log('up')
+    })
+
+
+
+    joystick2	= new VirtualJoystick({
+        container	: document.body,
+        strokeStyle	: 'orange',
+        limitStickTravel: true,
+        stickRadius	: 50
+    });
+
+    /*
+     var joystick2 = new VirtualJoystick({
+     mouseSupport	: true,
+     stationaryBase	: true,
+     baseX		: 4*window.innerWidth/5,
+     baseY		: 4*window.innerHeight/5,
+     limitStickTravel: true,
+     stickRadius	: 50
+     });
+     */
+
+    joystick2.controllerType = 'camera'
+
+
+    joystick2.addEventListener('touchStartValidation', function(event){
+        var touch	= event.changedTouches[0];
+        if( touch.pageX < window.innerWidth/2 )	return false;
+        return true
+    });
+    joystick2.addEventListener('touchStart', function(){
+        console.log('fire')
+    })
+
+
 
 }
 

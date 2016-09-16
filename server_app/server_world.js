@@ -550,7 +550,7 @@ var renderPlayers = function(objects, delta, elapsedTimeAfterGetDelta) {
 
 
                         //raycast after camera update!!!!!!!
-                        checkRayCast(playerItem, scene)
+                      //  checkRayCast(playerItem, scene)
 
                             break; // exit loop
 
@@ -844,7 +844,7 @@ var resetMoveStates = function(){
             hitOnce: false
         };
     });
-}
+};
 
 //setInterval(renderPlayers,300)
 /*

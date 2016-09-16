@@ -688,3 +688,7 @@ for (var prop in mesh.actions) {
 var ar1 = [1,2,3]
 ar1.push([4,5,6])
 console.log(ar1)
+
+ar1.splice(0,2)
+
+console.log(ar1)

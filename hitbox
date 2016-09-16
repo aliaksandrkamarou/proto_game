@@ -1,0 +1,86 @@
+// head
+
+					var cubeGeometry = new THREE.BoxGeometry( .15, .2, .22 );
+					var cubeMaterial = new THREE.MeshBasicMaterial( {color: 0x00ff00} );
+					cubeGeometry.translate ( 0, .09, -0.015 );
+					cubeGeometry.rotateX ( 0.35 )
+					cubeMaterial.transparent = true;
+					cubeMaterial.opacity = 0.5;
+
+					//cubeMaterial.dynamic = true;
+					//cubeMaterial.skinning = true;
+
+					var cube = new THREE.Mesh( cubeGeometry, cubeMaterial );
+
+					//cube.updateMatrix();
+					mesh.updateMatrixWorld();
+
+					var vector = new THREE.Vector3();
+					vector.setFromMatrixPosition( mesh.children[0].children[0].children[0].children[0].children[0].children[0].matrixWorld  );
+
+					cube.position.copy(vector/*mesh.children[0].position*/);
+					cube.updateMatrixWorld();
+
+
+
+
+					THREE.SceneUtils.attach ( cube, scene, mesh.children[0].children[0].children[0].children[0].children[0].children[0])
+
+					scene.add(mesh);
+//
+
+// 0 bone
+var cubeGeometry = new THREE.BoxGeometry( .32, .25, .26 );
+					var cubeMaterial = new THREE.MeshBasicMaterial( {color: 0x00ff00} );
+					//cubeGeometry.translate ( 0, 0, 0.05 );
+					//cubeGeometry.rotateX ( 0.35 )
+					cubeMaterial.transparent = true;
+					cubeMaterial.opacity = 0.5;
+
+					//cubeMaterial.dynamic = true;
+					//cubeMaterial.skinning = true;
+
+					var cube2 = new THREE.Mesh( cubeGeometry, cubeMaterial );
+
+					//cube.updateMatrix();
+					mesh.updateMatrixWorld();
+
+					var vector = new THREE.Vector3();
+					vector.setFromMatrixPosition( mesh.children[0].matrixWorld  );
+
+					cube2.position.copy(vector/*mesh.children[0].position*/);
+					cube2.updateMatrixWorld();
+
+
+
+
+		var zero_bone			THREE.SceneUtils.attach ( cube2, scene, mesh.children[0])
+
+	// leg high right
+    var cubeGeometry = new THREE.BoxGeometry( .17, .5, .17 );
+    					var cubeMaterial = new THREE.MeshBasicMaterial( {color: 0x00ff00} );
+    					cubeGeometry.translate ( 0, -0.13, 0 );
+    					//cubeGeometry.rotateX ( 0.35 )
+    					cubeMaterial.transparent = true;
+    					cubeMaterial.opacity = 0.5;
+
+    					//cubeMaterial.dynamic = true;
+    					//cubeMaterial.skinning = true;
+
+    					var cube2 = new THREE.Mesh( cubeGeometry, cubeMaterial );
+
+    					//cube.updateMatrix();
+    					mesh.updateMatrixWorld();
+
+    					var vector = new THREE.Vector3();
+    					vector.setFromMatrixPosition( mesh.children[0].children[1].matrixWorld  );
+
+    					cube2.position.copy(vector/*mesh.children[0].position*/);
+    					cube2.updateMatrixWorld();
+
+
+
+
+    					THREE.SceneUtils.attach ( cube2, scene, mesh.children[0].children[1])
+
+    	// left vector.setFromMatrixPosition( mesh.children[0].children[2].matrixWorld  ); && vector.setFromMatrixPosition( mesh.children[0].children[2].matrixWorld  );
