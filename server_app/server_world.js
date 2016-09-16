@@ -9,7 +9,7 @@ var checkRayCast = require('../share/checkRayCast');
 var checkKeyStates = require('../share/checkKeyStates');
 
 //var Worker = require('tiny-worker');
-var Worker = require('pseudo-worker');
+//var Worker = require('pseudo-worker');
 
 var Physijs = require('../lib/physi.js');
 
